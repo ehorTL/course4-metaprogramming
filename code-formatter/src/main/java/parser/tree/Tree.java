@@ -20,4 +20,8 @@ public class Tree<T> {
     public Node<T> getRoot() {
         return root;
     }
+
+    public void setRoot(Node<T> root) {
+        this.root = root;
+    }
 }
