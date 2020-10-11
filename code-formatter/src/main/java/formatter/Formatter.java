@@ -2,6 +2,8 @@ package formatter;
 
 import com.yehorpolishchuk.lexercpp.lexer.Lexer;
 import com.yehorpolishchuk.lexercpp.token.Token;
+import formatter.filewriter.TokenFileWriter;
+import formatter.streamconverter.TokensStreamConverter;
 import parser.parser.TreeBuilder;
 import parser.tree.Node;
 import parser.tree.Tree;
@@ -23,10 +25,12 @@ public class Formatter {
         lexer.parse();
 
         ArrayList<Token> tokens = lexer.getTokens();
-        TreeBuilder<Node<Token>> treeBuilder = new TreeBuilder<>(tokens);
-        Tree<Node<Token>> tree = treeBuilder.build(); // getting 'AST' tree
+        TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens);
+        tokensStreamConverter.convert();
+        ArrayList<Token> output = tokensStreamConverter.getTokens();
 
-
+        TokenFileWriter tokenFileWriter = new TokenFileWriter(output);
+        tokenFileWriter.write();
     }
 
     public static void main(String[] args) {

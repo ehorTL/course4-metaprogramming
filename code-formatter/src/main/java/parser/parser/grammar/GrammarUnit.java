@@ -5,8 +5,8 @@ public class GrammarUnit {
     private Terminal terminal;
     private Nonterminal nonterminal;
 
-    public GrammarUnit() {
-
+    public GrammarUnit(GrammarUnitType type) {
+        this.type = type;
     }
 
     public void setTerminal(GrammarUnitType type, Terminal terminal) {
@@ -17,5 +17,13 @@ public class GrammarUnit {
     public void setNontrminal(GrammarUnitType type, Nonterminal nonterminal) {
         this.type = type;
         this.nonterminal = nonterminal;
+    }
+
+    public Nonterminal getNonterminal() {
+        return nonterminal;
+    }
+
+    public Terminal getTerminal() {
+        return terminal;
     }
 }

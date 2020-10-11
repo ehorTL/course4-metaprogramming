@@ -1,4 +1,31 @@
 package parser.parser.grammar;
 
 public enum Terminal {
+    LEFT_FIGURE_BRACKET,
+    RIGHT_FIGURE_BRACKET,
+    LEFT_SQUARE_BRACKET,
+    RIGHT_SQUARE_BRACKET,
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+
+    SEMICOLON,
+    SINGLE_COLON,
+    DOUBLE_COLON,
+    COMMA,
+
+    PLUS,
+    MINUS,
+    MULTIPLY_BY,
+    DIVIDE_ON,
+    MODULAR_DIVISION,
+
+    PRE_INCREMENT,
+    POST_INCREMENT,
+    PRE_DECREMENT,
+    POST_DECREMENT,
+
+    NUMBER,
+    CHAR_LITERAL, //??
+
+
 }
