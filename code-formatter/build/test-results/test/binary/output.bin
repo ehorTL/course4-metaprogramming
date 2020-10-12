@@ -1,0 +1,16 @@
+|C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\lexeme\Lexeme.java
+zC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\lexer\Lexer.java
+zC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\Token.java
+~C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenName.java
+ÖC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenNameAllowed.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenValue.java
+oC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\dirtree\FileManager.java
+yC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\exceptions\ConverterException.java
+vC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\filewriter\TokenFileWriter.java
+eC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\Formatter.java
+wC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\Nonterminal.java
+uC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\StackUnit.java
+ÅC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\TokensStreamConverter.java
+VC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\Main.java
+sC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\templatereader\TemplateProperties.java
+sC:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\test\java\formatter\dirtree\FileManagerTest.java

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="formatter.dirtree.FileManagerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2020-10-12T11:04:58" hostname="dellE4300" time="0.032">
+  <properties/>
+  <testcase name="getFilesFromDirWithExts" classname="formatter.dirtree.FileManagerTest" time="0.032"/>
+  <system-out><![CDATA[C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\lexeme\Lexeme.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\lexer\Lexer.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\Token.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenName.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenNameAllowed.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\com\yehorpolishchuk\lexercpp\token\TokenValue.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\dirtree\FileManager.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\exceptions\ConverterException.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\filewriter\TokenFileWriter.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\Formatter.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\Nonterminal.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\StackUnit.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\formatter\streamconverter\TokensStreamConverter.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\Main.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\main\java\templatereader\TemplateProperties.java
+C:\Users\user\Desktop\course4\metaprogramming\code-formatter\src\test\java\formatter\dirtree\FileManagerTest.java
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

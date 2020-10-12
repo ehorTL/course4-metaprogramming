@@ -19,6 +19,5 @@ public class TemplateProperties {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
     }
 }

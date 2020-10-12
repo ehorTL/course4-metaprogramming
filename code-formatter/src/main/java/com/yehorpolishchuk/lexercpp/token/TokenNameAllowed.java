@@ -11,5 +11,16 @@ public enum TokenNameAllowed {
     LITERAL_NUMBER,
     PREPROCESSOR_DIR,
     TRIGRAPH,
-    ERROR
+    ERROR,
+
+    // newly added
+    LEFT_FIGURE_BRACKET,
+    RIGHT_FIGURE_BRACKET,
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    LEFT_SQUARE_BRACKET,
+    RIGHT_SQUARE_BRACKET,
+
+    SPACES
+
 }
