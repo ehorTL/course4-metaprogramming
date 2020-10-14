@@ -3,8 +3,12 @@ package templatereader;
 import formatter.dirtree.FileManager;
 import formatter.exceptions.DialogException;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class TemplatesReader {
@@ -45,5 +49,33 @@ public class TemplatesReader {
         } else {
             throw new DialogException("Incorrect input");
         }
+    }
+
+    public static TemplateProperties getTemplate(String templateFileName){
+        TemplateProperties templateProperties = new TemplateProperties();
+
+        try (InputStream input = new FileInputStream(templateFileName)) {
+            Properties prop = new Properties();
+            prop.load(input);
+            templateProperties = getTemplate(prop);
+        } catch (IOException ex) {
+            System.out.println("EXCEPZTION!!!!");
+            ex.printStackTrace();
+        }
+
+        return templateProperties;
+    }
+
+    private static TemplateProperties getTemplate(Properties propertiesFile) {
+        TemplateProperties templateProperties = new TemplateProperties();
+
+        templateProperties.while_parentheses = true;
+        templateProperties.before_left_brace_do = true;
+        templateProperties.before_while = true;
+//        templateProperties.before_while = propertiesFile.getProperty();
+//        templateProperties.before_while = propertiesFile.getProperty();
+//        templateProperties.before_while = propertiesFile.getProperty();
+
+        return templateProperties;
     }
 }

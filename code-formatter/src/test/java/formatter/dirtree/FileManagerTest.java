@@ -25,7 +25,7 @@ public class FileManagerTest {
         ));
 
         String testpath = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src";
-        ArrayList<String> arrayList = FileManager.getFilesFromDirWithExts(testpath, testext);
+        ArrayList<String> arrayList = FileManager.getFilesFromDirWithExts(testpath, testext, true);
 
         for (String s : arrayList) {
             System.out.println(s);

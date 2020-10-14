@@ -7,6 +7,7 @@ import formatter.exceptions.DialogException;
 import formatter.filewriter.TokenFileWriter;
 import formatter.streamconverter.TokensStreamConverter;
 import formatter.utils.File;
+import templatereader.TemplateProperties;
 import templatereader.TemplatesReader;
 
 import java.io.IOException;
@@ -21,12 +22,15 @@ public class Formatter {
      *
      * @param fileFullName The full path to C++ file (.cpp) OR RELATIVE??!!?!?
      * */
-    public static void format(String fileFullName, String outputFileName) throws IOException, ConverterException {
+    public static void format(String fileFullName, String outputFileName, TemplateProperties templateProperties) throws IOException, ConverterException {
         Lexer lexer = new Lexer (fileFullName);
         lexer.parse();
-
         ArrayList<Token> tokens = lexer.getTokens();
-        TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens);
+
+        // DEBUG
+        for (Token t : tokens ) System.out.println(t.getValue().getValue());
+
+        TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens, templateProperties);
         tokensStreamConverter.convert();
         ArrayList<Token> output = tokensStreamConverter.getTokens();
 
@@ -35,15 +39,16 @@ public class Formatter {
     }
 
     public static void main(String[] args) throws IOException, ConverterException, DialogException {
-        commandHandler(args);
+//        commandHandler(args);
 
+        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input2.cpp";
+        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\output2.cpp";
 
-//        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input.cpp";
-//        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\output.cpp";
-//
+        String templateFilename = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\templates\\template.properties";
+        TemplateProperties templateProperties = TemplatesReader.getTemplate(templateFilename);
 //        TemplatesReader.dialog(true);
 
-//        format(inputFileName, outputFileName);
+        format(inputFileName, outputFileName, templateProperties);
     }
 
     public static void commandHandler(String[] args){
@@ -80,7 +85,7 @@ public class Formatter {
                 if (s.equals("--p")) {
                     fileToAnalyze = File.PROJECT;
                 } else if (s.equals("--d")){
-                    fileToAnalyze = File.DIRECTOmainRY;
+                    fileToAnalyze = File.DIRECTORY;
                 } else if (s.equals("--f")) {
                     fileToAnalyze = File.FILE;
                 }
