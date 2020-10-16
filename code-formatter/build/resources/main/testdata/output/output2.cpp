@@ -1,6 +1,5 @@
-do{
-	do{
-		
+do {
+	do {
+		a ? b : c;
 	} while ();
-	
-} while ()
+} while ();

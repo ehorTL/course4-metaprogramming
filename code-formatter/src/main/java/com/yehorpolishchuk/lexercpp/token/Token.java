@@ -36,4 +36,14 @@ public  class Token {
     public TokenMetadata getMeta(){
         return this.meta;
     }
+
+    public boolean isLiteral(){
+        return this.name.getTokenName() == TokenNameAllowed.LITERAL_NUMBER ||
+                this.name.getTokenName() == TokenNameAllowed.LITERAL_STRING ||
+                this.name.getTokenName() == TokenNameAllowed.LITERAL_STRING;
+    }
+
+    public boolean isOperator(){
+        return this.getName().getTokenName() == TokenNameAllowed.OPERATOR;
+    }
 }

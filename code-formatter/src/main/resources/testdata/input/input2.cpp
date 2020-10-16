@@ -1,1 +1,3 @@
-do{ do {} while ( );} while ()
+do{ do {
+    a?b:c;
+} while ( );} while ();

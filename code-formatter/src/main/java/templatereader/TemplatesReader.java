@@ -69,9 +69,26 @@ public class TemplatesReader {
     private static TemplateProperties getTemplate(Properties propertiesFile) {
         TemplateProperties templateProperties = new TemplateProperties();
 
-        templateProperties.while_parentheses = true;
+        templateProperties.before_while_parentheses = true;
         templateProperties.before_left_brace_do = true;
         templateProperties.before_while = true;
+
+        templateProperties.in_tern_op_bf_colon = true;
+        templateProperties.in_tern_op_af_colon = true;
+        templateProperties.in_tern_op_bf_qm = true;
+        templateProperties.in_tern_op_af_qm = true;
+
+
+        templateProperties.template_within_brackets = true;
+        templateProperties.template_within_empty_brackets = true;
+        templateProperties.template_before_left_angle_bracket = true;
+
+        templateProperties.before_left_brace_namespace = true;
+
+        templateProperties.around_shift_ops = true;
+        templateProperties.around_relational_ops = true;
+        templateProperties.around_equality_ops = true;
+
 //        templateProperties.before_while = propertiesFile.getProperty();
 //        templateProperties.before_while = propertiesFile.getProperty();
 //        templateProperties.before_while = propertiesFile.getProperty();

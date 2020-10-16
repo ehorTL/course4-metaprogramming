@@ -1,10 +1,9 @@
 package formatter.streamconverter;
 
 import com.yehorpolishchuk.lexercpp.token.Token;
-import com.yehorpolishchuk.lexercpp.token.TokenName;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
-import com.yehorpolishchuk.lexercpp.token.TokenValue;
 import formatter.exceptions.ConverterException;
+import jdk.vm.ci.code.site.Mark;
 import templatereader.TemplateProperties;
 
 import java.util.ArrayList;
@@ -56,16 +55,34 @@ public class TokensStreamConverter {
             TokenNameAllowed curTokenName = curToken.getName().getTokenName();
 
             if (curTokenName == TokenNameAllowed.KEYWORD) {
-                if (curTokenValue.equals("if")){
-                    outputStream.add(curToken);
-                    if (this.templateProperties.if_parentheses){
-                        outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
+                if (curTokenValue.equals("operator")){
+                    addTokenToOutput(curToken);
+                    if (templateProperties.other_between_operator_keyword_and_punctuator){
+                        addSpaceToOutputStream();
                     }
+                } else if (curTokenValue.equals("typename")){
+
+                } else if (curTokenValue.equals("template")){
+                  stack.push(new StackUnit(StackMarker.TEMPLATE_DECL));
+                  addTokenToOutput(curToken);
+                } else if (curTokenValue.equals("class")) {
+                    if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET) {
+                        stack.push(new StackUnit(StackMarker.CLASS_IN_TEMPLATE_DECL));
+                    } else {
+                        stack.push(new StackUnit(StackMarker.CLASS_DECL));
+                    }
+                    addTokenAndSpaceToOutput(curToken);
+                    addSpaceToOutputStream();
+                } else if (curTokenValue.equals("structure")) {
+                    stack.push(new StackUnit(StackMarker.STRUCTURE_DECL));
+                    addTokenToOutput(curToken);
+                    addSpaceToOutputStream();
+                } else if (curTokenValue.equals("if")){
+                    stack.add(new StackUnit(StackMarker.IF));
+                    addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("for")){
-                    outputStream.add(curToken);
-                    if (this.templateProperties.for_parentheses){
-                        outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
-                    }
+                    addTokenToOutput(curToken);
+                    stack.push(new StackUnit(StackMarker.FOR));
                 } else if (curTokenValue.equals("while")){
                     if (stack.peek().marker == StackMarker.DO_WHILE_RHT_BR){
                         stack.pop();
@@ -81,42 +98,153 @@ public class TokensStreamConverter {
                     addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("switch")){
                     outputStream.add(curToken);
-                    if (this.templateProperties.switch_parentheses){
+                    if (this.templateProperties.before_switch_parentheses){
                         outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
                     }
+                } else if (curTokenValue.equals("try")){
+                    stack.push(new StackUnit(StackMarker.TRY));
+                    addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("catch")){
-                    outputStream.add(curToken);
-                    if (this.templateProperties.catch_parentheses){
-                        outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
-                    }
+                    addTokenToOutput(curToken);
+                    stack.push(new StackUnit(StackMarker.CATCH));
                 } else if (curTokenValue.equals("namespace")){
-                    this.stack.push(new StackUnit(StackMarker.NAMESPACE, lookahead_index));
-                    this.outputStream.add(curToken);
-                } else if (curTokenValue.equals("class")){
-                    stack.push(new StackUnit(StackMarker.CLASS));
+                    this.stack.push(new StackUnit(StackMarker.NAMESPACE_DECL, lookahead_index));
+                    addTokenToOutput(curToken);
+                    addSpaceToOutputStream();
                 } else if (curTokenValue.equals("do")) {
                     stack.push(new StackUnit(StackMarker.DO_WHILE_DO));
                     addTokenToOutput(curToken);
+                } else {
+                    addTokenToOutput(curToken);
                 }
             } else if (curTokenName == TokenNameAllowed.IDENTIFIER) {
-
+                if (stack.peek().marker == StackMarker.STRUCTURE_DECL) {
+                    stack.pop();
+                    stack.push(new StackUnit(StackMarker.CLASS_NAME_DECL));
+                } else if (stack.peek().marker == StackMarker.CLASS_DECL) {
+                    stack.pop();
+                    stack.push(new StackUnit(StackMarker.STRUCTURE_NAME_DECL));
+                } else {
+                    addSpaceToOutputStream();
+                }
+                addTokenToOutput(curToken);
+                addSpaceToOutputStream();
             } else if (curTokenName == TokenNameAllowed.OPERATOR) {
-                if (curTokenValue.equals("=") || curTokenValue.equals("+=") || curTokenValue.equals("-=") ||
+                if (curTokenValue.equals("<")){
+                    if (stack.peek().marker == StackMarker.TEMPLATE_DECL) {
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET));
+
+                        if (templateProperties.template_before_left_angle_bracket) {
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+
+                        Token nextToken = peekNextTokenIfExist();
+                        if (nextToken != null) {
+                            if (curToken.getValue().getValue().equals(">")){
+                                if (templateProperties.template_within_empty_brackets) {
+                                    addSpaceToOutputStream();
+                                }
+                            } else {
+                                if (templateProperties.template_within_brackets){
+                                    addSpaceToOutputStream();
+                                }
+                            }
+                        }
+                    } else {
+                        if (templateProperties.around_relational_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        } else {
+                            addTokenToOutput(curToken);
+                        }
+                    }
+                } else if (curTokenValue.equals(">")){
+                    if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
+                        Token prevToken = peekPrevTokenIfExists();
+                        if (prevToken != null){
+                            if (!prevToken.getValue().getValue().equals("<")){
+                                if (templateProperties.template_within_brackets){
+                                    addSpaceToOutputStream();
+                                }
+                            }
+                        }
+                        stack.push(new StackUnit(StackMarker.TEMPLATE_RIGHT_ANGLE_BRACKET));
+                        addTokenToOutput(curToken);
+
+                        // here we must pop twice and handle the eof or add space
+                    } else {
+                        if (templateProperties.around_relational_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        } else {
+                            addTokenToOutput(curToken);
+                        }
+                    }
+                } else if (curTokenValue.equals(">>") || curTokenValue.equals("<<")) {
+                    if (templateProperties.around_shift_ops) {
+                        addSpaceToOutputStream();
+                    }
+                    addTokenToOutput(curToken);
+                    if (templateProperties.around_shift_ops) {
+                        addSpaceToOutputStream();
+                    }
+                } else if (curTokenValue.equals("?")){
+                    stack.push(new StackUnit(StackMarker.TERNARY_OP));
+                    if (templateProperties.in_tern_op_bf_qm){
+                        addSpaceToOutputStream();
+                    }
+                    addTokenToOutput(curToken);
+                    if (templateProperties.in_tern_op_af_qm){
+                        addSpaceToOutputStream();
+                    }
+                } else if (curTokenValue.equals(":")) {
+                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL) {
+                        stack.push(new StackUnit(StackMarker.BASE_COLON));
+                        if (templateProperties.class_structure_bf_base_class_colon){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.class_structure_af_base_class_colon){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.STRUCTURE_NAME_DECL) {
+                        stack.push(new StackUnit(StackMarker.BASE_COLON));
+                        if (templateProperties.class_structure_bf_base_class_colon){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.class_structure_af_base_class_colon){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.TERNARY_OP){
+                        if (templateProperties.in_tern_op_bf_colon) {
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.in_tern_op_af_colon) {
+                            addSpaceToOutputStream();
+                        }
+                    }
+                } else if (curTokenValue.equals("=") || curTokenValue.equals("+=") || curTokenValue.equals("-=") ||
                         curTokenValue.equals("*=") || curTokenValue.equals("/=")){
                     if (templateProperties.around_assignment_ops){
                         this.addSpaceToOutputStream();
-                        this.outputStream.add(curToken);
+                        addTokenToOutput(curToken);
                         this.addSpaceToOutputStream();
                     } else {
-                        this.outputStream.add(curToken);
+                        addTokenToOutput(curToken);
                     }
                 } else if (curTokenValue.equals("&&") || curTokenValue.equals("||")){
                     if (templateProperties.around_logical_ops){
                         this.addSpaceToOutputStream();
-                        this.outputStream.add(curToken);
+                        addTokenToOutput(curToken);
                         this.addSpaceToOutputStream();
                     } else {
-                        this.outputStream.add(curToken);
+                        addTokenToOutput(curToken);
                     }
                 } else if (curTokenValue.equals("==") || curTokenValue.equals("!=")) {
                     if (templateProperties.around_equality_ops){
@@ -126,8 +254,7 @@ public class TokensStreamConverter {
                     } else {
                         this.outputStream.add(curToken);
                     }
-                } else if (curTokenValue.equals("<") || curTokenValue.equals(">") || curTokenValue.equals("<=") ||
-                        curTokenValue.equals(">=") || curTokenValue.equals("<=>")) {
+                } else if (curTokenValue.equals("<=") || curTokenValue.equals(">=") || curTokenValue.equals("<=>")) {
                     if (templateProperties.around_relational_ops){
                         this.addSpaceToOutputStream();
                         this.outputStream.add(curToken);
@@ -163,35 +290,207 @@ public class TokensStreamConverter {
                     }
                 }
             } else if (curTokenName == TokenNameAllowed.PUNCTUATOR) {
-                if (curTokenValue.equals("(")){
-                    if (stack.peek().marker == StackMarker.DO_WHILE_WHILE){
+                if (curTokenValue.equals("[")){
+                    addTokenToOutput(curToken);
+                    if (templateProperties.within_array_brackets){
+                        addSpaceToOutputStream();
+                    }
+                } else if (curTokenValue.equals("]")) {
+                    if (templateProperties.within_array_brackets){
+                        if (!prevTokenIsSpace()){
+                            addSpaceToOutputStream();
+                        }
+                    }
+                    addTokenToOutput(curToken);
+                } else if (curTokenValue.equals(",")) {
+                    addTokenToOutput(curToken);
+                    if (templateProperties.other_after_comma){
+                        addSpaceToOutputStream();
+                    }
+                } else if (curTokenValue.equals("(")){
+                    if (stack.peek().marker == StackMarker.CATCH){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.CATCH_LEFT_PARENTH));
+                        if (this.templateProperties.before_catch_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.within_catch_parenth){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.DO_WHILE_WHILE){
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.DO_WHILE_PARENTH_LEFT));
-                        if (templateProperties.while_parentheses){
+                        if (templateProperties.before_while_parentheses){
                             addSpaceToOutputStream();
                         }
                     } else if (stack.peek().marker == StackMarker.WHILE){
-
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.WHILE_LEFT_PARENTH));
+                        if (templateProperties.before_while_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.within_while_parenth){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.FOR){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.FOR_LEFT_PARENTH));
+                        if (this.templateProperties.before_for_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.within_for_parenth){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.IF){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.IF_PARENTH_LEFT));
+                        if (templateProperties.before_if_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.within_if_parenth){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.SWITCH){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.IF_PARENTH_LEFT));
+                        if (templateProperties.before_switch_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.within_switch_parenth){
+                            addSpaceToOutputStream();
+                        }
+                    } else if (stack.peek().marker == StackMarker.CATCH){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.CATCH_LEFT_PARENTH));
+                        if (templateProperties.before_catch_parentheses){
+                            addSpaceToOutputStream();
+                        }
                     }
-                    addTokenToOutput(curToken);
-                }
-                if (curTokenValue.equals(")")){
+//                    addTokenToOutput(curToken);
+                } else if (curTokenValue.equals(")")){
                     if (stack.peek().marker == StackMarker.DO_WHILE_PARENTH_LEFT){
                         stack.push(new StackUnit(StackMarker.DO_WHILE_PARENTH_RIGHT));
+                    } else if (stack.peek().marker == StackMarker.IF_PARENTH_LEFT){
+                        if (templateProperties.within_if_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.IF_PARENTH_RIGHT));
+                    } else if (stack.peek().marker == StackMarker.FOR_SECOND_SEMICOLON){
+                        removeFromStack(2); // ;;
+                        if (templateProperties.within_for_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.FOR_RIGHT_PARENTH));
+                    }
+//                    else if (stack.peek().marker == StackMarker.FOR_LEFT_PARENTH){
+//                        if (templateProperties.within_for_parenth){
+//                            addSpaceToOutputStream();
+//                        }
+//                        stack.push(new StackUnit(StackMarker.FOR_RIGHT_PARENTH));
+//                    }
+                    else if (stack.peek().marker == StackMarker.WHILE_LEFT_PARENTH){
+                        if (templateProperties.within_while_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.WHILE_RIGHT_PARENTH));
+                    } else if (stack.peek().marker == StackMarker.CATCH_LEFT_PARENTH){
+                        if (templateProperties.within_catch_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.CATCH_RIGHT_PARENTH));
+                    } else if (stack.peek().marker == StackMarker.SWITCH_LEFT_PARENTH){
+                        if (templateProperties.within_switch_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.SWITCH_RIGHT_PARENTH));
                     }
                     addTokenToOutput(curToken);
                 }
                 if (curTokenValue.equals(";")){
-                    if (stack.peek().marker == StackMarker.DO_WHILE_PARENTH_RIGHT){
+                    if (stack.peek().marker == StackMarker.FOR_FIRST_SEMICOLON) {
+                        if (templateProperties.other_before_for_semicolon){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.other_after_for_semicolon) {
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.FOR_SECOND_SEMICOLON));
+                    } else if (stack.peek().marker == StackMarker.FOR_LEFT_PARENTH){
+                        if (templateProperties.other_before_for_semicolon){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.other_after_for_semicolon) {
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.FOR_FIRST_SEMICOLON));
+                    } else if (stack.peek().marker == StackMarker.TERNARY_OP){
+                        stack.pop();
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.DO_WHILE_PARENTH_RIGHT){
                         stack.pop();
                         stack.pop();
+                        addTokenToOutput(curToken);
                     }
-                    addTokenToOutput(curToken);
-                    addNewlineWithIndent();
                 }
 
                 if (curTokenValue.equals("{")) {
-                    if (this.stack.peek().marker == StackMarker.DO_WHILE_DO){
+                    if (stack.peek().marker == StackMarker.IF_PARENTH_RIGHT){
+                        removeFromStack(2);
+                        stack.push(new StackUnit(StackMarker.IF_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_if){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.ELSE){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.ELSE_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_else){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.FOR_RIGHT_PARENTH){
+                           removeFromStack(2);
+                           stack.push(new StackUnit(StackMarker.FOR_LEFT_BRACE));
+                           if(templateProperties.before_left_brace_for){
+                               addSpaceToOutputStream();
+                           }
+                           addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.WHILE_RIGHT_PARENTH){
+                        removeFromStack(2);
+                        stack.push(new StackUnit(StackMarker.WHILE_LEFT_BRACE));
+                        if(templateProperties.before_left_brace_while){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.SWITCH_RIGHT_PARENTH){
+                        removeFromStack(2); // ()
+                        stack.push(new StackUnit(StackMarker.SWITCH_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_switch){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.CATCH_RIGHT_PARENTH){
+                        removeFromStack(2); // ()
+                        stack.push(new StackUnit(StackMarker.CATCH_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_catch){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.TRY){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.TRY_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_try){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                    } else if (this.stack.peek().marker == StackMarker.DO_WHILE_DO){
                         stack.push(new StackUnit(StackMarker.DO_WHILE_LFT_BR));
                         if (templateProperties.before_left_brace_do){
                             addSpaceToOutputStream();
@@ -199,34 +498,31 @@ public class TokensStreamConverter {
                         addTokenToOutput(curToken);
                         nestingLevel++;
                         addNewlineWithIndent();
-                    } else if (this.stack.peek().marker == StackMarker.NAMESPACE){
-                        if (templateProperties.namespace){
+                    } else if (this.stack.peek().marker == StackMarker.NAMESPACE_DECL){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.NAMESPACE_LEFT_BRACE));
+                        if (templateProperties.before_left_brace_namespace){
                             addSpaceToOutputStream();
                         }
+                        addTokenToOutput(curToken);
+                        nestingLevel++;
+                        addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("}")) {
-                    if (this.stack.peek().marker == StackMarker.NAMESPACE){
+                    if (this.stack.peek().marker == StackMarker.NAMESPACE_LEFT_BRACE){
                         this.stack.pop();
-                    }
-
-                    if (stack.peek().marker == StackMarker.DO_WHILE_LFT_BR){
+                        this.nestingLevel--;
+                        addNewlineWithIndent();
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.DO_WHILE_LFT_BR){
                         this.stack.push(new StackUnit(StackMarker.DO_WHILE_RHT_BR));
                         this.nestingLevel--;
                         addNewlineWithIndent();
                         addTokenToOutput(curToken);
                     }
 
-//                    this.outputStream.add(new Token(TokenNameAllowed.SPACES, NEWLINE.concat(this.getCurrentIndent())));
-//                    this.outputStream.add(curToken);
-//                    this.outputStream.add(new Token(TokenNameAllowed.SPACES, NEWLINE.concat(this.getCurrentIndent())));
                 }
-             } else if (curTokenName == TokenNameAllowed.KEYWORD) {
-                if (curTokenValue.equals("for")) {
-                    handleFor();
-                } else if (true) {
-
-                }
-            }
+             }
 
             this.lookahead_index++; // ?
         }
@@ -249,47 +545,6 @@ public class TokensStreamConverter {
         }
     }
 
-    public void handleFor() throws ConverterException {
-//        this.stack.push(new Token(TokenNameAllowed.KEYWORD, "for"));
-        handleLeftBrace();
-        forInstr1();
-//        semicolon();
-        forInstr2();
-//        semicolon();
-        forInstr3();
-        handleRightBrace();
-//        this.stack.pop();
-    }
-
-    public void varDecl() {
-
-    }
-
-    public void forInstr1(){
-        instruction();
-    }
-    public void forInstr2(){
-        boolExpr();
-    }
-    public void forInstr3(){
-        instruction();
-    }
-
-//    public void semicolon(){
-//        this.outputStream.add(new Token(TokenNameAllowed.PUNCTUATOR, ";"));
-//        this.lookahead_index++;
-//    }
-
-    public void boolExpr(){
-
-    }
-
-    public void instruction(){
-
-    }
-
-    public void handleWhile(){}
-
     public void addSpaceToOutputStream(){
         this.outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
     }
@@ -310,4 +565,96 @@ public class TokensStreamConverter {
         this.outputStream.add(token);
     }
 
+    public void addTokenAndSpaceToOutput(Token token) {
+        addTokenToOutput(token);
+        addSpaceToOutputStream();
+    }
+
+    /**
+     * @return null if not found any
+     * */
+    public Token peekNextTokenIfExist() {
+        return this.getOrNullTokenWithIndex(this.lookahead_index + 1);
+    }
+
+    public Token peekPrevTokenIfExists(){
+        return this.getOrNullTokenWithIndex(this.lookahead_index - 1);
+    }
+
+    public Token getOrNullTokenWithIndex(int index) {
+        if (index < this.inputStream.size() && index >= 0) {
+            return this.inputStream.get(index);
+        }
+
+        return null;
+    }
+
+    private void removeFromStackLastElems(Stack stack, int quantity) {
+        for (int i=0; i<stack.size() && i<quantity; i++){
+            stack.pop();
+        }
+    }
+
+    public void removeFromStack(int quantity){
+        removeFromStackLastElems(this.stack, quantity);
+    }
+
+    public boolean prevTokenIsSpace(){
+        Token prev = peekNextTokenIfExist();
+        if (prev == null){
+            return false;
+        }
+
+        if (prev.getValue().getValue().equals(SPACE)){
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * "+" and "-" can be as binary as unary ops depending on context
+     * "+" and "-" are unary if they follows identifier, ), ], any literal
+     * */
+    public boolean isBinaryOperator(int tokenPosition){
+        Token curToken = getOrNullTokenWithIndex(tokenPosition);
+        if (curToken == null) return false;
+        if (!curToken.isOperator()) return false;
+
+        String tokenValue = curToken.getValue().getValue();
+        Token prevToken = getOrNullTokenWithIndex(tokenPosition - 1);
+        if (prevToken == null) return false;
+
+        if (tokenValue.equals("+") || tokenValue.equals("-")) {
+            if (prevToken.getName().getTokenName() == TokenNameAllowed.IDENTIFIER || prevToken.isLiteral() ||
+            prevToken.getValue().getValue().equals(")") || prevToken.getValue().getValue().equals("]")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Unary operators can be: + - ++ -- !
+     * ++, --, ! - always unary
+     * + and - can be as binary as unary depending on context
+     * If they are not binary, we consider them as unary
+     * */
+    public boolean isUnaryOperator(int tokenPosition){
+        Token curToken = getOrNullTokenWithIndex(tokenPosition);
+        if (curToken == null) return false;
+        if (!curToken.isOperator()) return false;
+
+        String tokenValue = curToken.getValue().getValue();
+        if (tokenValue.equals("!") || tokenValue.equals("++") || tokenValue.equals("--")) {
+            return true;
+        } else if (tokenValue.equals("+") || tokenValue.equals("-")) {
+            return !isBinaryOperator(tokenPosition);
+        }
+
+        return false;
+    }
 }
