@@ -254,7 +254,9 @@ public class TokensStreamConverter {
                     } else {
                         this.outputStream.add(curToken);
                     }
-                } else if (curTokenValue.equals("<=") || curTokenValue.equals(">=") || curTokenValue.equals("<=>")) {
+                }
+                // consider > and < as relational operators too
+                else if (curTokenValue.equals("<=") || curTokenValue.equals(">=") || curTokenValue.equals("<=>")) {
                     if (templateProperties.around_relational_ops){
                         this.addSpaceToOutputStream();
                         this.outputStream.add(curToken);
@@ -262,7 +264,7 @@ public class TokensStreamConverter {
                     } else {
                         this.outputStream.add(curToken);
                     }
-                } else if (curTokenValue.equals("*") || curTokenValue.equals("/") || curTokenValue.equals("%")) {
+                } else if (curTokenValue.equals("/") || curTokenValue.equals("%")) {
                     if (templateProperties.around_multiplicative_ops){
                         this.addSpaceToOutputStream();
                         this.outputStream.add(curToken);
@@ -270,8 +272,14 @@ public class TokensStreamConverter {
                     } else {
                         this.addSpaceToOutputStream();
                     }
-                } else if (curTokenValue.equals("->") || curTokenValue.equals(".") || curTokenValue.equals("->.") ||
-                        curTokenValue.equals(".*")) {
+                } else if (curTokenValue.equals("*")) {
+                    // TODO
+                    // handle 4 cases
+                    // templateProperties.around_multiplicative_ops
+                    // templateProperties.other_after_asterisk_in_declarations
+                    // templateProperties.other_before_asterisk_in_declarations
+                    // templateProperties.other_after_dereference_and_address_of
+                } else if (curTokenValue.equals(".") || curTokenValue.equals("->.") || curTokenValue.equals(".*")) {
                     if (templateProperties.around_pointer_to_member_ops_ops){
                         this.addSpaceToOutputStream();
                         this.outputStream.add(curToken);
@@ -279,15 +287,44 @@ public class TokensStreamConverter {
                     } else {
                         this.outputStream.add(curToken);
                     }
+                } else if (curTokenValue.equals("->")){
+                    // TODO
+                    // handle 2 cases
+                    // templateProperties.around_pointer_in_ret_type_ops
+                    // templateProperties.around_pointer_to_member_ops_ops
                 } else if (curTokenValue.equals("!") || curTokenValue.equals("-") || curTokenValue.equals("+") ||
                         curTokenValue.equals("++") || curTokenValue.equals("--")) {
-                    if (templateProperties.around_unary_ops){
-                        this.addSpaceToOutputStream();
-                        this.outputStream.add(curToken);
-                        this.addSpaceToOutputStream();
+                    if (isBinaryOperator(this.lookahead_index)){ // + or -
+                        if (templateProperties.around_additive_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        } else {
+                            addTokenToOutput(curToken);
+                        }
                     } else {
-                        this.outputStream.add(curToken);
+                        if (templateProperties.around_unary_ops){
+                            addSpaceToOutputStream();
+                            outputStream.add(curToken);
+                            addSpaceToOutputStream();
+                        } else {
+                            outputStream.add(curToken);
+                        }
                     }
+                } else if (curTokenValue.equals("|") || curTokenValue.equals("^")) {
+                    if (templateProperties.around_bitwise_ops) {
+                        addSpaceToOutputStream();
+                        addTokenToOutput(curToken);
+                        addSpaceToOutputStream();
+                    } else {
+                        addTokenToOutput(curToken);
+                    }
+                } else if (curTokenValue.equals("&")){
+                    // TODO
+                    // handle 3 cases:
+                    // around_bitwise_ops and
+                    // templateProperties.other_before_amp_in_declarations;
+                    // templateProperties.other_after_amp_in_declarations;
                 }
             } else if (curTokenName == TokenNameAllowed.PUNCTUATOR) {
                 if (curTokenValue.equals("[")){

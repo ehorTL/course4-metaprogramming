@@ -110,6 +110,13 @@ public class TemplateProperties {
     public boolean other_before_colon_in_bit_field;
     public boolean other_after_colon_in_bit_field;
 
+    public boolean other_before_amp_in_declarations;
+    public boolean other_after_amp_in_declarations;
+
+    public boolean other_after_dereference_and_address_of; // *
+    public boolean other_before_asterisk_in_declarations;
+    public boolean other_after_asterisk_in_declarations;
+
     /**
      * In Template Declaration
      * */
