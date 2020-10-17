@@ -38,7 +38,7 @@ public class Formatter {
         tokenFileWriter.write();
     }
 
-    public static void main(String[] args) throws IOException, ConverterException, DialogException {
+    public static void main(String[] args) throws IOException, ConverterException, DialogException, NoSuchFieldException, IllegalAccessException {
 //        commandHandler(args);
 
         String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input3.cpp";

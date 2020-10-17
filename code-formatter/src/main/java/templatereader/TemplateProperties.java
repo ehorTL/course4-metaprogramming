@@ -14,20 +14,14 @@ public class TemplateProperties {
     /**
      * Before Parentheses (after keywords), ("(")
      * */
+    public boolean before_function_declaration_parentheses; // ?? -------
+    public boolean before_function_call_parentheses; // ?? ---------
+
     public boolean before_if_parentheses; // +
     public boolean before_for_parentheses; // +
     public boolean before_while_parentheses; // +
     public boolean before_switch_parentheses; // +
     public boolean before_catch_parentheses; // +
-    public boolean function_declaration_parentheses; // ?? -------
-    public boolean function_call_parentheses; // ?? ---------
-
-    /**
-     * Before Keywords
-     * */
-    public boolean before_else;
-    public boolean before_while; //+-
-    public boolean before_catch;
 
     /**
      * Around Operators
@@ -43,7 +37,6 @@ public class TemplateProperties {
     public boolean around_unary_ops;
     public boolean around_pointer_in_ret_type_ops;
     public boolean around_pointer_to_member_ops_ops;
-
 
     /**
      * Before Left Brace ("{")
@@ -61,29 +54,31 @@ public class TemplateProperties {
     public boolean before_left_brace_switch; // +
     public boolean before_left_brace_try; // +
     public boolean before_left_brace_catch; // +
-    // ...
+
+    /**
+     * Before Keywords
+     * */
+    public boolean before_else;
+    public boolean before_while; //+-
+    public boolean before_catch;
 
     /**
      * Within
+     * not full
      * */
     public boolean within_empty_code_braces; //
+    public boolean within_array_brackets; // + ?
+    public boolean within_grouping_parenth;
     public boolean within_if_parenth; // +
     public boolean within_for_parenth; // ++
     public boolean within_while_parenth; // ++
     public boolean within_switch_parenth; //++
     public boolean within_catch_parenth; // ++
-    public boolean within_grouping_parenth;
-    public boolean within_array_brackets; // + ?
-
     public boolean within_type_cast_parenth; //
     public boolean within_function_declaration_parenth;
     public boolean within_empty_function_declaration_parenth;
     public boolean within_function_call_parenth;
     public boolean within_empty_function_call_parenth;
-
-
-//    ....
-
 
     /**
      * In ternary operator
@@ -92,6 +87,7 @@ public class TemplateProperties {
     public boolean in_tern_op_af_qm;
     public boolean in_tern_op_bf_colon;
     public boolean in_tern_op_af_colon;
+
     /**
      * usage ?? elvis operator?
      * */
@@ -100,22 +96,22 @@ public class TemplateProperties {
     /**
      * Other
      * */
-    public boolean other_before_for_semicolon;
-    public boolean other_after_for_semicolon;
     public boolean other_before_comma;
     public boolean other_after_comma;
-    public boolean other_between_operator_keyword_and_punctuator;
+    public boolean other_before_for_semicolon;
+    public boolean other_after_for_semicolon;
+    public boolean after_type_cast; // ------
+    public boolean other_prevent_angle_brackets_concatenation_in_template; // -------------
     public boolean other_after_right_brace_in_structures;
-
-    public boolean other_before_colon_in_bit_field;
-    public boolean other_after_colon_in_bit_field;
-
-    public boolean other_before_amp_in_declarations;
-    public boolean other_after_amp_in_declarations;
-
-    public boolean other_after_dereference_and_address_of; // *
     public boolean other_before_asterisk_in_declarations;
     public boolean other_after_asterisk_in_declarations;
+    public boolean other_before_amp_in_declarations;
+    public boolean other_after_amp_in_declarations;
+    public boolean other_after_dereference_and_address_of; // *
+    public boolean other_keep_space_between_same_type_brackets; // --------------
+    public boolean other_before_colon_in_bit_field;
+    public boolean other_after_colon_in_bit_field;
+    public boolean other_between_operator_keyword_and_punctuator;
 
     /**
      * In Template Declaration

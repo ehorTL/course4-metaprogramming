@@ -321,10 +321,20 @@ public class TokensStreamConverter {
                     }
                 } else if (curTokenValue.equals("&")){
                     // TODO
-                    // handle 3 cases:
-                    // around_bitwise_ops and
+                    // handle 4 cases:
+                    // around_bitwise_ops and +
+                    // templateProperties.other_after_dereference_and_address_of
                     // templateProperties.other_before_amp_in_declarations;
                     // templateProperties.other_after_amp_in_declarations;
+                    if (false){} else {
+                        if (templateProperties.around_bitwise_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        } else {
+                            addTokenToOutput(curToken);
+                        }
+                    }
                 }
             } else if (curTokenName == TokenNameAllowed.PUNCTUATOR) {
                 if (curTokenValue.equals("[")){
@@ -694,4 +704,43 @@ public class TokensStreamConverter {
 
         return false;
     }
+
+    /**
+     * Finds last token in the output that is not of type SPACES
+     * */
+    private Token lastNonSpaceTokenInOutput(){
+        if (outputStream.size() == 0){
+            return null;
+        }
+
+        Token last = null;
+        int lastIndex = outputStream.size() - 1;
+        for (; lastIndex>=0 && (last.getName().getTokenName() == TokenNameAllowed.SPACES); lastIndex--){
+            last = outputStream.get(lastIndex);
+        }
+
+        if (last.getName().getTokenName() == TokenNameAllowed.SPACES){
+            return null;
+        }
+
+        return last;
+    }
+
+    /**
+     * Checks if last not spacing token equals "}".
+     * Can be used when
+     * */
+    private boolean isLastTokenRightBrace(){
+        Token last = lastNonSpaceTokenInOutput();
+        if (last == null) {
+            return false;
+        }
+
+        if (last.getValue().getValue().equals("}")){
+            return true;
+        }
+
+        return false;
+    }
+
 }

@@ -1,5 +1,5 @@
-namespace id1 {
-	namespace id2 {
+namespace  id1  {
+	namespace  id2  {
 		
 	}
 }

@@ -6,10 +6,8 @@ import formatter.exceptions.DialogException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.Scanner;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class TemplatesReader {
 
@@ -51,7 +49,7 @@ public class TemplatesReader {
         }
     }
 
-    public static TemplateProperties getTemplate(String templateFileName){
+    public static TemplateProperties getTemplate(String templateFileName) throws NoSuchFieldException, IllegalAccessException {
         TemplateProperties templateProperties = new TemplateProperties();
 
         try (InputStream input = new FileInputStream(templateFileName)) {
@@ -59,15 +57,22 @@ public class TemplatesReader {
             prop.load(input);
             templateProperties = getTemplate(prop);
         } catch (IOException ex) {
-            System.out.println("EXCEPZTION!!!!");
+            System.out.println("Exception in reading property file");
             ex.printStackTrace();
         }
 
         return templateProperties;
     }
 
-    private static TemplateProperties getTemplate(Properties propertiesFile) {
+    private static TemplateProperties getTemplate(Properties propertiesFile) throws NoSuchFieldException, IllegalAccessException {
         TemplateProperties templateProperties = new TemplateProperties();
+
+//        Set keys = propertiesFile.keySet();
+//        Iterator it = keys.iterator();
+//        while(it.hasNext()){
+//            String key = (String) it.next();
+//            setTemplateFieldFromProperties(templateProperties, propertiesFile, key);
+//        }
 
         templateProperties.before_while_parentheses = true;
         templateProperties.before_left_brace_do = true;
@@ -89,10 +94,23 @@ public class TemplatesReader {
         templateProperties.around_relational_ops = true;
         templateProperties.around_equality_ops = true;
 
-//        templateProperties.before_while = propertiesFile.getProperty();
-//        templateProperties.before_while = propertiesFile.getProperty();
-//        templateProperties.before_while = propertiesFile.getProperty();
-
         return templateProperties;
+    }
+
+    private static void setTemplateFieldFromProperties(TemplateProperties templateProperties, Properties properties, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+        Field field = templateProperties.getClass().getDeclaredField(fieldName);
+        boolean val = stringToBoolean(properties.getProperty(fieldName));
+        field.setBoolean(templateProperties, val);
+    }
+
+    private static boolean stringToBoolean(String string){
+        if (string == null){
+            return false;
+        }
+        if (string.equals("1") || string.toLowerCase().equals("true")){
+            return true;
+        }
+
+        return false;
     }
 }
