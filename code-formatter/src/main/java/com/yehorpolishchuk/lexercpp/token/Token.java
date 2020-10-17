@@ -46,4 +46,17 @@ public  class Token {
     public boolean isOperator(){
         return this.getName().getTokenName() == TokenNameAllowed.OPERATOR;
     }
+
+    public boolean isSingleLineComment(){
+        if (this.name.getTokenName() != TokenNameAllowed.COMMENT){
+            return false;
+        }
+        if (this.value.getValue().startsWith("//")){
+            return true;
+        }
+
+        return false;
+    }
+
+
 }

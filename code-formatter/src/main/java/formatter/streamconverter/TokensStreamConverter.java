@@ -54,25 +54,39 @@ public class TokensStreamConverter {
             String curTokenValue = curToken.getValue().getValue();
             TokenNameAllowed curTokenName = curToken.getName().getTokenName();
 
-            if (curTokenName == TokenNameAllowed.KEYWORD) {
+            if (curTokenName == TokenNameAllowed.COMMENT){
+                addTokenToOutput(curToken);
+                if (curToken.isSingleLineComment()){
+                    addNewlineWithIndent();
+                }
+            } else if (curTokenName == TokenNameAllowed.PREPROCESSOR_DIR){
+                addTokenToOutput(curToken);
+                addNewlineWithIndent();
+            } else if (curTokenName == TokenNameAllowed.KEYWORD) {
                 if (curTokenValue.equals("operator")){
                     addTokenToOutput(curToken);
                     if (templateProperties.other_between_operator_keyword_and_punctuator){
                         addSpaceToOutputStream();
                     }
                 } else if (curTokenValue.equals("typename")){
+                    if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
 
+                    }
+                    addTokenAndSpaceToOutput(curToken);
                 } else if (curTokenValue.equals("template")){
                   stack.push(new StackUnit(StackMarker.TEMPLATE_DECL));
                   addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("class")) {
                     if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET) {
                         stack.push(new StackUnit(StackMarker.CLASS_IN_TEMPLATE_DECL));
+                    } else if (stack.peek().marker == StackMarker.TEMPLATE_RIGHT_ANGLE_BRACKET){
+                        removeFromStack(2);
+                        stack.push(new StackUnit(StackMarker.CLASS_DECL));
                     } else {
                         stack.push(new StackUnit(StackMarker.CLASS_DECL));
                     }
                     addTokenAndSpaceToOutput(curToken);
-                    addSpaceToOutputStream();
+//                    addSpaceToOutputStream();
                 } else if (curTokenValue.equals("structure")) {
                     stack.push(new StackUnit(StackMarker.STRUCTURE_DECL));
                     addTokenToOutput(curToken);
@@ -120,15 +134,16 @@ public class TokensStreamConverter {
             } else if (curTokenName == TokenNameAllowed.IDENTIFIER) {
                 if (stack.peek().marker == StackMarker.STRUCTURE_DECL) {
                     stack.pop();
-                    stack.push(new StackUnit(StackMarker.CLASS_NAME_DECL));
+                    stack.push(new StackUnit(StackMarker.STRUCTURE_NAME_DECL));
                 } else if (stack.peek().marker == StackMarker.CLASS_DECL) {
                     stack.pop();
-                    stack.push(new StackUnit(StackMarker.STRUCTURE_NAME_DECL));
+                    stack.push(new StackUnit(StackMarker.CLASS_NAME_DECL));
+                } else if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
+                    // do nothing
                 } else {
                     addSpaceToOutputStream();
                 }
                 addTokenToOutput(curToken);
-                addSpaceToOutputStream();
             } else if (curTokenName == TokenNameAllowed.OPERATOR) {
                 if (curTokenValue.equals("<")){
                     if (stack.peek().marker == StackMarker.TEMPLATE_DECL) {
@@ -173,8 +188,7 @@ public class TokensStreamConverter {
                         }
                         stack.push(new StackUnit(StackMarker.TEMPLATE_RIGHT_ANGLE_BRACKET));
                         addTokenToOutput(curToken);
-
-                        // here we must pop twice and handle the eof or add space
+                        addNewlineWithIndent();
                     } else {
                         if (templateProperties.around_relational_ops){
                             addSpaceToOutputStream();
@@ -488,7 +502,13 @@ public class TokensStreamConverter {
                 }
 
                 if (curTokenValue.equals("{")) {
-                    if (stack.peek().marker == StackMarker.IF_PARENTH_RIGHT){
+                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
+                        stack.pop();
+                        stack.push(new StackUnit(StackMarker.CLASS_DEF_LEFT_BRACE));
+                        addTokenToOutput(curToken);
+                        nestingLevel++;
+                        addNewlineWithIndent();
+                    } else if (stack.peek().marker == StackMarker.IF_PARENTH_RIGHT){
                         removeFromStack(2);
                         stack.push(new StackUnit(StackMarker.IF_LEFT_BRACE));
                         if (templateProperties.before_left_brace_if){
@@ -556,7 +576,12 @@ public class TokensStreamConverter {
                         addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("}")) {
-                    if (this.stack.peek().marker == StackMarker.NAMESPACE_LEFT_BRACE){
+                    if (stack.peek().marker == StackMarker.CLASS_DEF_LEFT_BRACE){
+                        this.stack.pop();
+                        this.nestingLevel--;
+                        addNewlineWithIndent();
+                        addTokenToOutput(curToken);
+                    } else if (this.stack.peek().marker == StackMarker.NAMESPACE_LEFT_BRACE){
                         this.stack.pop();
                         this.nestingLevel--;
                         addNewlineWithIndent();
@@ -726,6 +751,26 @@ public class TokensStreamConverter {
         return last;
     }
 
+    private Token lastNonSpaceNonCommentTokenInOutput(){
+        if (outputStream.size() == 0){
+            return null;
+        }
+
+        Token last = null;
+        int lastIndex = outputStream.size() - 1;
+        for (; lastIndex>=0 && ((last.getName().getTokenName() == TokenNameAllowed.SPACES)
+                || last.getName().getTokenName() == TokenNameAllowed.COMMENT); lastIndex--){
+            last = outputStream.get(lastIndex);
+        }
+
+        if (last.getName().getTokenName() == TokenNameAllowed.SPACES
+                || last.getName().getTokenName()== TokenNameAllowed.COMMENT){
+            return null;
+        }
+
+        return last;
+    }
+
     /**
      * Checks if last not spacing token equals "}".
      * Can be used when
@@ -742,5 +787,7 @@ public class TokensStreamConverter {
 
         return false;
     }
+
+
 
 }

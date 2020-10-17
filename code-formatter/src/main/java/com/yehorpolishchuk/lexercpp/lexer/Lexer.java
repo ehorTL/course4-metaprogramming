@@ -2,6 +2,7 @@ package com.yehorpolishchuk.lexercpp.lexer;
 
 import com.yehorpolishchuk.lexercpp.lexeme.Lexeme;
 import com.yehorpolishchuk.lexercpp.token.Token;
+import com.yehorpolishchuk.lexercpp.token.TokenMetadata;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
 
 import java.io.File;
@@ -21,6 +22,12 @@ public class Lexer {
     private ArrayList<Token> tokens;
     private String rawCodeFilename;
     private StringBuilder buffer;
+
+    private TokenMetadata curTokenMeta;
+    private int lineNumber = 0; // from 0
+    private int posInLine = 0; // from 0
+    private int lineStartsFromCharacter = 0;
+    private int beforeChangesIndex = 0;
 
     /**
      * Reads a file with filename and save it content to this.rawCode string.
@@ -117,9 +124,10 @@ public class Lexer {
         while (this.indexPointerRawCodeStream < this.rawCodeStream.length()){
             char c = rawCodeStream.charAt(this.indexPointerRawCodeStream);
 
+            this.linesCounterControlBeforeChanges();
+
             //logging transitions of DFA
-            System.out.print("MUMBER : " + indexPointerRawCodeStream + " code " + (byte)c + " char " +
-                    ((c == '\n') ? "\\n" : c) + " STATE FROM: " + state);
+            logTransitions(c, false);
 
             switch (this.state){
                 case 0 : startState(c); break;
@@ -198,6 +206,8 @@ public class Lexer {
             System.out.println(" ---> " + state);
 
             this.indexPointerRawCodeStream++;
+
+            linesCounterControlAfterChanges();
         }
 
         //flush not empty buffer as an ERROR
@@ -218,6 +228,73 @@ public class Lexer {
         //the simple way to clarify token is by using regex here in loop
     }
 
+    private void logTransitions(char currentCharacter, boolean loggingEnabled){
+        if (!loggingEnabled) return;
+
+        System.out.print("NUMBER : " + indexPointerRawCodeStream + " code " + (byte)currentCharacter + " char " +
+                ((currentCharacter == '\n') ? "\\n" : currentCharacter) + " STATE FROM: " + state);
+    }
+
+    /**
+     * start and end inclusively
+     * */
+    private int countNewLineCharsFromTo(int start, int end){
+        int counter = 0;
+        for (int i=start; i <= end; i++){
+            if (rawCodeStream.charAt(i) == '\n'){
+                counter++;
+            }
+        }
+
+        return counter;
+    }
+
+    private void linesCounterControlAfterChanges(){
+        if (indexPointerRawCodeStream == rawCodeStream.length()){
+            return;
+        }
+
+        int shift = indexPointerRawCodeStream - beforeChangesIndex; // should be 1
+        int lineDif = 0;
+        if (shift > 0){
+            lineDif = countNewLineCharsFromTo(beforeChangesIndex, indexPointerRawCodeStream - 1);
+        } else if (shift < 0){
+            lineDif = -countNewLineCharsFromTo(indexPointerRawCodeStream, beforeChangesIndex-1);
+        }
+
+        if (lineDif != 0){
+            this.lineNumber = this.lineNumber + lineDif;
+            this.lineStartsFromCharacter = lineStartIndForCharAtInd(this.indexPointerRawCodeStream);
+        }
+    }
+
+    private int lineStartIndForCharAtInd(int charInd){
+        if (rawCodeStream.charAt(charInd) == '\n'){
+            return charInd;
+        }
+
+        for (int i=charInd-1; i >= 0; i--){
+            if (rawCodeStream.charAt(i) == '\n'){
+                return i+1;
+            }
+        }
+
+        return  0;
+    }
+
+    private void linesCounterControlBeforeChanges(){
+        this.beforeChangesIndex = this.indexPointerRawCodeStream;
+
+        if (this.indexPointerRawCodeStream == 0){
+            this.lineNumber = -1;
+            return;
+        }
+
+        System.out.println("line, strt, char): " + "(" + this.lineNumber + ", " + this.lineStartsFromCharacter + ", " +
+                rawCodeStream.charAt(this.lineStartsFromCharacter));
+
+    }
+
     /**
      * Add transitionSymbol to the buffer and set new state;
      * Transition function analogue
@@ -225,6 +302,13 @@ public class Lexer {
     private void moveAndAddToBuffer(char transitionSymbol, int newState){
         this.state = newState;
         this.buffer.append(transitionSymbol);
+    }
+
+    private void moveAndAddToBufferWithMeta(char transitionSymbol, int newState, TokenMetadata meta){
+        this.state = newState;
+        this.buffer.append(transitionSymbol);
+
+        this.curTokenMeta = meta;
     }
 
     private void moveAndAddToBuffer(String transitionSymbol, int newState){
@@ -245,6 +329,13 @@ public class Lexer {
      * */
     private void addTokenAndClearBuffer(TokenNameAllowed tokenName, String value){
         tokens.add(new Token(tokenName, value));
+        buffer = new StringBuilder("");
+    }
+
+    private void addTokenAndClearBufferWithMeta(TokenNameAllowed tokenName, String value, TokenMetadata meta){
+        Token token = new Token(tokenName, value);
+        token.setMeta(meta);
+        tokens.add(token);
         buffer = new StringBuilder("");
     }
 

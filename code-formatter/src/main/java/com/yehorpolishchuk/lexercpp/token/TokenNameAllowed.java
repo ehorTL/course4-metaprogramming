@@ -21,6 +21,7 @@ public enum TokenNameAllowed {
     LEFT_SQUARE_BRACKET,
     RIGHT_SQUARE_BRACKET,
 
-    SPACES
+    SPACES,
+    COMMENT_SINGLE_LINE
 
 }

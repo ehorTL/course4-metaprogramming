@@ -138,8 +138,25 @@ public class TemplateProperties {
 
     /**
      * Wrapping and Braces block
+     * ------
      * */
 
+    /**
+     * BLANK LINES
+     * */
+
+    public int keep_max_blank_lines_in_declarations;
+    public int keep_max_blank_lines_in_code;
+    public int keep_max_blank_lines_in_before_right_brace;
+    public int minimum_blank_lines_before_includes;
+    public int minimum_blank_lines_after_includes;
+    public int minimum_blank_lines_around_class_structure;
+    public int minimum_blank_lines_after_class_structure_header;
+    public int minimum_blank_lines_around_field;
+    public int minimum_blank_lines_around_global_variable;
+    public int minimum_blank_lines_around_function_declaration;
+    public int minimum_blank_lines_around_function_definition;
+    public int minimum_blank_lines_before_function_body;
 
     public TemplateProperties() { }
 }

@@ -41,8 +41,8 @@ public class Formatter {
     public static void main(String[] args) throws IOException, ConverterException, DialogException, NoSuchFieldException, IllegalAccessException {
 //        commandHandler(args);
 
-        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input3.cpp";
-        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\output3.cpp";
+        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input4_preprocessor.cpp";
+        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\output4.cpp";
 
         String templateFilename = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\templates\\template.properties";
         TemplateProperties templateProperties = TemplatesReader.getTemplate(templateFilename);
