@@ -3,7 +3,6 @@ package formatter.streamconverter;
 import com.yehorpolishchuk.lexercpp.token.Token;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
 import formatter.exceptions.ConverterException;
-import jdk.vm.ci.code.site.Mark;
 import templatereader.TemplateProperties;
 
 import java.util.ArrayList;
@@ -362,13 +361,41 @@ public class TokensStreamConverter {
             } else if (curTokenName == TokenNameAllowed.PUNCTUATOR) {
                 if (curTokenValue.equals("[")){
                     addTokenToOutput(curToken);
-                    if (templateProperties.within_array_brackets){
-                        addSpaceToOutputStream();
+                    Token prev = lastNonSpaceNonCommentTokenInOutput();
+                    if (prev != null){
+                        if (prev.getName().getTokenName() == TokenNameAllowed.IDENTIFIER ||
+                        prev.getValue().getValue().equals(")") || prev.getValue().getValue().equals("]")){
+                            stack.push(new StackUnit(StackMarker.ARRAY_LEFT_BRACKET));
+                            if (templateProperties.within_array_brackets){
+                                addSpaceToOutputStream();
+                            }
+                        } else if (prev.getName().getTokenName() == TokenNameAllowed.OPERATOR){ // =
+                            stack.push(new StackUnit(StackMarker.CAPTURE_LIST_LEFT_BRACKET));
+                            if (peekNextTokenIfExist() != null){
+                                if (peekNextTokenIfExist().getValue().getValue().equals("]")){
+                                    if (templateProperties.within_empty_lambda_capture_list_brackets){
+                                        addSpaceToOutputStream();
+                                    }
+                                } else if (templateProperties.within_lambda_capture_list_brackets){
+                                    addSpaceToOutputStream();
+                                }
+                            }
+                        }
                     }
                 } else if (curTokenValue.equals("]")) {
-                    if (templateProperties.within_array_brackets){
-                        if (!prevTokenIsSpace()){
-                            addSpaceToOutputStream();
+                    if (stack.peek().marker == StackMarker.ARRAY_LEFT_BRACKET){
+                        stack.pop();
+                        if (templateProperties.within_array_brackets){
+                            if (!prevTokenIsSpace()){
+                                addSpaceToOutputStream();
+                            }
+                        }
+                    } else if (stack.peek().marker == StackMarker.CAPTURE_LIST_LEFT_BRACKET){
+                        stack.push(new StackUnit(StackMarker.CAPTURE_LIST_RIGHT_BRACKET));
+                        if (!lastNonSpaceTokenInOutput().getValue().getValue().equals("[")){
+                            if (templateProperties.within_lambda_capture_list_brackets){
+                                addSpaceToOutputStream();
+                            }
                         }
                     }
                     addTokenToOutput(curToken);
@@ -796,7 +823,5 @@ public class TokensStreamConverter {
 
         return false;
     }
-
-
 
 }

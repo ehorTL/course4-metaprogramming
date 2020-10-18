@@ -68,6 +68,8 @@ public class TemplateProperties {
      * */
     public boolean within_empty_code_braces; //
     public boolean within_array_brackets; // + ?
+    public boolean within_lambda_capture_list_brackets;
+    public boolean within_empty_lambda_capture_list_brackets;
     public boolean within_grouping_parenth;
     public boolean within_if_parenth; // +
     public boolean within_for_parenth; // ++

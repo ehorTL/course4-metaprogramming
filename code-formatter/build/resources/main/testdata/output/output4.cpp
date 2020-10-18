@@ -5,11 +5,15 @@
 template < typename K >
 class A{
 	
-}// void foo();
+} // void foo();
+
 // hello world
+
 /**
 * hello new world
-*//*hello brave new world*//*int main(){foo();}
+*/
+/*hello brave new world*/
+/*int main(){foo();}
 
 void foo(){}
 

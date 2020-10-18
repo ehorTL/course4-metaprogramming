@@ -318,13 +318,6 @@ public class Lexer {
         this.buffer.append(transitionSymbol);
     }
 
-//    private void moveAndAddToBufferWithMeta(char transitionSymbol, int newState, TokenMetadata meta){
-//        this.state = newState;
-//        this.buffer.append(transitionSymbol);
-//
-//        this.curTokenMeta = meta;
-//    }
-
     private void moveAndAddToBuffer(String transitionSymbol, int newState){
         this.state = newState;
         this.buffer.append(transitionSymbol);
