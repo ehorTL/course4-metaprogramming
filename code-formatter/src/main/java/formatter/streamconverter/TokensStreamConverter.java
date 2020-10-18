@@ -55,6 +55,12 @@ public class TokensStreamConverter {
             TokenNameAllowed curTokenName = curToken.getName().getTokenName();
 
             if (curTokenName == TokenNameAllowed.COMMENT){
+                if (curToken.getMeta().isFirstFromLineStart()){
+                    addNewlineWithIndent();
+                } else {
+                    addSpaceToOutputStream();
+                }
+
                 addTokenToOutput(curToken);
                 if (curToken.isSingleLineComment()){
                     addNewlineWithIndent();
@@ -72,20 +78,22 @@ public class TokensStreamConverter {
                     if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
 
                     }
-                    addTokenAndSpaceToOutput(curToken);
+                    addTokenToOutput(curToken);
+//                    addTokenAndSpaceToOutput(curToken);
                 } else if (curTokenValue.equals("template")){
                   stack.push(new StackUnit(StackMarker.TEMPLATE_DECL));
                   addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("class")) {
                     if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET) {
-                        stack.push(new StackUnit(StackMarker.CLASS_IN_TEMPLATE_DECL));
+//                        stack.push(new StackUnit(StackMarker.CLASS_IN_TEMPLATE_DECL));
                     } else if (stack.peek().marker == StackMarker.TEMPLATE_RIGHT_ANGLE_BRACKET){
                         removeFromStack(2);
                         stack.push(new StackUnit(StackMarker.CLASS_DECL));
                     } else {
                         stack.push(new StackUnit(StackMarker.CLASS_DECL));
                     }
-                    addTokenAndSpaceToOutput(curToken);
+                    addTokenToOutput(curToken);
+//                    addTokenAndSpaceToOutput(curToken);
 //                    addSpaceToOutputStream();
                 } else if (curTokenValue.equals("structure")) {
                     stack.push(new StackUnit(StackMarker.STRUCTURE_DECL));
@@ -143,6 +151,7 @@ public class TokensStreamConverter {
                 } else {
                     addSpaceToOutputStream();
                 }
+                addSpaceToOutputStream();
                 addTokenToOutput(curToken);
             } else if (curTokenName == TokenNameAllowed.OPERATOR) {
                 if (curTokenValue.equals("<")){

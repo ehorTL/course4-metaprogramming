@@ -6,9 +6,7 @@
 #define FALSE 0
 
 template<typename K>
-class A{}
-
-// void foo();
+class A{} // void foo();
 // hello world
 
 /**

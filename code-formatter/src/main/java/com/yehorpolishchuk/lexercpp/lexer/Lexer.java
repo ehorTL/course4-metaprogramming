@@ -228,6 +228,20 @@ public class Lexer {
         //the simple way to clarify token is by using regex here in loop
     }
 
+    private boolean isFirstTokenFromLineStart(int startTokenInd, int startLineInd){
+        if (startLineInd == startTokenInd) {
+            return true;
+        }
+
+        for (int i=startTokenInd-1; i >= startLineInd; i--){
+            if (!Lexeme.isWhitespace(rawCodeStream.charAt(i))){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private void logTransitions(char currentCharacter, boolean loggingEnabled){
         if (!loggingEnabled) return;
 
@@ -290,8 +304,8 @@ public class Lexer {
             return;
         }
 
-        System.out.println("line, strt, char): " + "(" + this.lineNumber + ", " + this.lineStartsFromCharacter + ", " +
-                rawCodeStream.charAt(this.lineStartsFromCharacter));
+//        System.out.println("line, strt, char): " + "(" + this.lineNumber + ", " + this.lineStartsFromCharacter + ", " +
+//                rawCodeStream.charAt(this.lineStartsFromCharacter));
 
     }
 
@@ -304,12 +318,12 @@ public class Lexer {
         this.buffer.append(transitionSymbol);
     }
 
-    private void moveAndAddToBufferWithMeta(char transitionSymbol, int newState, TokenMetadata meta){
-        this.state = newState;
-        this.buffer.append(transitionSymbol);
-
-        this.curTokenMeta = meta;
-    }
+//    private void moveAndAddToBufferWithMeta(char transitionSymbol, int newState, TokenMetadata meta){
+//        this.state = newState;
+//        this.buffer.append(transitionSymbol);
+//
+//        this.curTokenMeta = meta;
+//    }
 
     private void moveAndAddToBuffer(String transitionSymbol, int newState){
         this.state = newState;
@@ -333,6 +347,8 @@ public class Lexer {
     }
 
     private void addTokenAndClearBufferWithMeta(TokenNameAllowed tokenName, String value, TokenMetadata meta){
+        System.out.println(meta);
+
         Token token = new Token(tokenName, value);
         token.setMeta(meta);
         tokens.add(token);
@@ -388,6 +404,9 @@ public class Lexer {
         } else if (c == '.'){
             moveAndAddToBuffer(c, 25);
         } else if (c == '/'){
+            curTokenMeta = new TokenMetadata(lineNumber, indexPointerRawCodeStream);
+            curTokenMeta.setFirstFromLineStart(isFirstTokenFromLineStart(indexPointerRawCodeStream, lineStartsFromCharacter));
+
             moveAndAddToBuffer(c, 29);
         } else if (c == '?'){
             moveAndAddToBuffer(c, 33);
@@ -616,7 +635,7 @@ public class Lexer {
 
     private void inSingleLineComment30(char c){
         if (c =='\n'){
-            addTokenAndClearBuffer(COMMENT, buffer.toString());
+            addTokenAndClearBufferWithMeta(COMMENT, buffer.toString(), this.curTokenMeta);
             indexPointerRawCodeStream--;
             state = 0;
         } else {
@@ -634,7 +653,7 @@ public class Lexer {
 
     private void maybeMultilineCommentCloses32(char c){
         if (c == '/'){
-            addTokenAndClearBuffer(COMMENT, buffer.toString() + '/');
+            addTokenAndClearBufferWithMeta(COMMENT, buffer.toString() + '/', this.curTokenMeta);
             state = 0;
         } else {
             moveAndAddToBuffer(c, 31);
@@ -1239,6 +1258,7 @@ public class Lexer {
             return this.colorCode;
         }
     }
+
 
     public ArrayList<Token> getTokens() {
         return tokens;
