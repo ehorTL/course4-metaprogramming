@@ -28,7 +28,7 @@ public class Formatter {
         ArrayList<Token> tokens = lexer.getTokens();
 
         // DEBUG
-        for (Token t : tokens ) System.out.println(t.getValue().getValue());
+        for (Token t : tokens ) System.out.println(t.getName().getTokenName() + " --- " + t.getValue().getValue());
 
         TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens, templateProperties);
         tokensStreamConverter.convert();
@@ -41,8 +41,9 @@ public class Formatter {
     public static void main(String[] args) throws IOException, ConverterException, DialogException, NoSuchFieldException, IllegalAccessException {
 //        commandHandler(args);
 
-        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input4_preprocessor.cpp";
-        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\output4.cpp";
+//        String inputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\input4_preprocessor.cpp";
+        String outputFileName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\output\\test.cpp";
+        String inputFileName   = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\test.cpp";
 
         String templateFilename = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\templates\\template.properties";
         TemplateProperties templateProperties = TemplatesReader.getTemplate(templateFilename);

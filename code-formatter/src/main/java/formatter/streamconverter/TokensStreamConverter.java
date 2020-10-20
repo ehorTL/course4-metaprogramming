@@ -1,6 +1,7 @@
 package formatter.streamconverter;
 
 import com.yehorpolishchuk.lexercpp.token.Token;
+import com.yehorpolishchuk.lexercpp.token.TokenName;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
 import formatter.exceptions.ConverterException;
 import templatereader.TemplateProperties;
@@ -29,6 +30,7 @@ public class TokensStreamConverter {
         this.nestingBraces = 0;
         this.nestingLevel = 0;
         this.stack = new Stack<>();
+        this.stack.push(new StackUnit(StackMarker.STACK_FIRST_MARKER));
     }
 
     public TokensStreamConverter(ArrayList<Token> inputStream, TemplateProperties templateProperties){
@@ -39,6 +41,7 @@ public class TokensStreamConverter {
         this.nestingLevel = 0;
         this.templateProperties = templateProperties;
         this.stack = new Stack<>();
+        this.stack.push(new StackUnit(StackMarker.STACK_FIRST_MARKER));
     }
 
     public ArrayList<Token> getTokens() {
@@ -65,10 +68,46 @@ public class TokensStreamConverter {
                     addNewlineWithIndent();
                 }
             } else if (curTokenName == TokenNameAllowed.PREPROCESSOR_DIR){
+                if (lastNonSpaceTokenInOutput() != null){
+                    if (lastNonSpaceTokenInOutput().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
+                        addNewLines(templateProperties.minimum_blank_lines_before_includes);
+                    }
+                } else {
+                    this.addNewLines(templateProperties.minimum_blank_lines_after_includes);
+                }
                 addTokenToOutput(curToken);
+                if (peekNextTokenIfExist() != null){
+                    if (peekNextTokenIfExist().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
+                        // todo single line comments next ?
+                        this.addNewLines(templateProperties.minimum_blank_lines_after_includes);
+                    }
+                }
                 addNewlineWithIndent();
             } else if (curTokenName == TokenNameAllowed.KEYWORD) {
-                if (curTokenValue.equals("operator")){
+                if (false){
+                    // int void double but not type casting    
+                } else if (curTokenValue.equals("private") || curToken.equals("public") || curToken.equals("protected")){
+                    if (stack.peek().marker == StackMarker.BASE_COLON){
+                        addTokenToOutput(curToken);
+                    }
+                } else if (curTokenValue.equals("break")){
+                    // todo ??
+                } else if (curTokenValue.equals("default")){
+                  if (stack.peek().marker == StackMarker.SWITCH || stack.peek().marker == StackMarker.CASE){
+                      // todo ??
+                  } else {
+                      // todo - in class constructors case
+                      // default constructor
+                      addTokenToOutput(curToken);
+                  }
+                } else if (curTokenValue.equals("case")) {
+                    if (stack.peek().marker == StackMarker.CASE){
+                        stack.pop();
+                        nestingLevel--;
+                    }
+                  stack.push(new StackUnit(StackMarker.CASE));
+                  addTokenToOutput(curToken);
+                } else if (curTokenValue.equals("operator")){
                     addTokenToOutput(curToken);
                     if (templateProperties.other_between_operator_keyword_and_punctuator){
                         addSpaceToOutputStream();
@@ -91,9 +130,8 @@ public class TokensStreamConverter {
                     } else {
                         stack.push(new StackUnit(StackMarker.CLASS_DECL));
                     }
+                    addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
                     addTokenToOutput(curToken);
-//                    addTokenAndSpaceToOutput(curToken);
-//                    addSpaceToOutputStream();
                 } else if (curTokenValue.equals("structure")) {
                     stack.push(new StackUnit(StackMarker.STRUCTURE_DECL));
                     addTokenToOutput(curToken);
@@ -118,6 +156,7 @@ public class TokensStreamConverter {
                     }
                     addTokenToOutput(curToken);
                 } else if (curTokenValue.equals("switch")){
+                    stack.push(new StackUnit(StackMarker.SWITCH));
                     outputStream.add(curToken);
                     if (this.templateProperties.before_switch_parentheses){
                         outputStream.add(new Token(TokenNameAllowed.SPACES, SPACE));
@@ -139,7 +178,12 @@ public class TokensStreamConverter {
                     addTokenToOutput(curToken);
                 }
             } else if (curTokenName == TokenNameAllowed.IDENTIFIER) {
-                if (stack.peek().marker == StackMarker.STRUCTURE_DECL) {
+                if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){
+                    // todo remove - do nothing
+                    removeFromStack(1);
+                    addSpaceToOutputStream();
+                    stack.push(new StackUnit(StackMarker.ID_MAYBE_DECL));
+                } else if (stack.peek().marker == StackMarker.STRUCTURE_DECL) {
                     stack.pop();
                     stack.push(new StackUnit(StackMarker.STRUCTURE_NAME_DECL));
                 } else if (stack.peek().marker == StackMarker.CLASS_DECL) {
@@ -148,12 +192,15 @@ public class TokensStreamConverter {
                 } else if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
                     // do nothing
                 } else {
-                    addSpaceToOutputStream();
+//                    addSpaceToOutputStream(); // todo remove new line
+                    stack.push(new StackUnit(StackMarker.ID_MAYBE_DECL));
                 }
-                addSpaceToOutputStream();
+//                addSpaceToOutputStream();
                 addTokenToOutput(curToken);
             } else if (curTokenName == TokenNameAllowed.OPERATOR) {
-                if (curTokenValue.equals("<")){
+                if (curTokenValue.equals("::")){
+                  addTokenToOutput(curToken);
+                } else if (curTokenValue.equals("<")){
                     if (stack.peek().marker == StackMarker.TEMPLATE_DECL) {
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET));
@@ -224,7 +271,11 @@ public class TokensStreamConverter {
                         addSpaceToOutputStream();
                     }
                 } else if (curTokenValue.equals(":")) {
-                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL) {
+                    if (stack.peek().marker == StackMarker.CASE){
+                        addTokenToOutput(curToken);
+                        nestingLevel++;
+                        addNewline();
+                    } else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL) {
                         stack.push(new StackUnit(StackMarker.BASE_COLON));
                         if (templateProperties.class_structure_bf_base_class_colon){
                             addSpaceToOutputStream();
@@ -310,10 +361,20 @@ public class TokensStreamConverter {
                         this.outputStream.add(curToken);
                     }
                 } else if (curTokenValue.equals("->")){
-                    // TODO
-                    // handle 2 cases
-                    // templateProperties.around_pointer_in_ret_type_ops
-                    // templateProperties.around_pointer_to_member_ops_ops
+                    if (stack.peek().marker == StackMarker.LAMBDA_DECL_RIGHT_PARENTH){
+//                        removeFromStack(2); // ()
+                        if (templateProperties.around_pointer_in_ret_type_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        }
+                    } else {
+                        if (templateProperties.around_pointer_to_member_ops_ops){
+                            addSpaceToOutputStream();
+                            addTokenToOutput(curToken);
+                            addSpaceToOutputStream();
+                        }
+                    }
                 } else if (curTokenValue.equals("!") || curTokenValue.equals("-") || curTokenValue.equals("+") ||
                         curTokenValue.equals("++") || curTokenValue.equals("--")) {
                     if (isBinaryOperator(this.lookahead_index)){ // + or -
@@ -400,12 +461,40 @@ public class TokensStreamConverter {
                     }
                     addTokenToOutput(curToken);
                 } else if (curTokenValue.equals(",")) {
+                    if (templateProperties.other_before_comma){
+                        addSpaceToOutputStream();
+                    }
                     addTokenToOutput(curToken);
                     if (templateProperties.other_after_comma){
                         addSpaceToOutputStream();
                     }
                 } else if (curTokenValue.equals("(")){
-                    if (stack.peek().marker == StackMarker.CATCH){
+                    if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){
+                        removeFromStack(1);
+                        stack.push(new StackUnit(StackMarker.FUNCTION_DECL_ARG_LEFT_PARENTH));
+                        if (templateProperties.before_function_declaration_parentheses){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (peekNextTokenIfExist() != null){
+                            if (peekNextTokenIfExist().getValue().getValue().equals(")")){
+                                if (templateProperties.within_empty_function_declaration_parenth){
+                                    addSpaceToOutputStream();
+                                }
+                            } else {
+                                if (templateProperties.within_function_declaration_parenth){
+                                    addSpaceToOutputStream();
+                                }
+                            }
+                        }
+                    }
+                    else if (stack.peek().marker == StackMarker.CAPTURE_LIST_RIGHT_BRACKET){
+                        removeFromStack(2); // pop []
+                        stack.push(new StackUnit(StackMarker.LAMBDA_DECL_LEFT_PARENTH));
+                        addTokenToOutput(curToken);
+                        // todo
+                        // add function declaration spaces (2 cases)
+                    } else if (stack.peek().marker == StackMarker.CATCH){
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.CATCH_LEFT_PARENTH));
                         if (this.templateProperties.before_catch_parentheses){
@@ -453,7 +542,7 @@ public class TokensStreamConverter {
                         }
                     } else if (stack.peek().marker == StackMarker.SWITCH){
                         stack.pop();
-                        stack.push(new StackUnit(StackMarker.IF_PARENTH_LEFT));
+                        stack.push(new StackUnit(StackMarker.SWITCH_LEFT_PARENTH));
                         if (templateProperties.before_switch_parentheses){
                             addSpaceToOutputStream();
                         }
@@ -470,7 +559,15 @@ public class TokensStreamConverter {
                     }
 //                    addTokenToOutput(curToken);
                 } else if (curTokenValue.equals(")")){
-                    if (stack.peek().marker == StackMarker.DO_WHILE_PARENTH_LEFT){
+                    if (stack.peek().marker == StackMarker.FUNCTION_DECL_ARG_LEFT_PARENTH){
+//                        removeFromStack(1);
+                        stack.push(new StackUnit(StackMarker.FUNCTION_DECL_ARG_RIGHT_PARENTH));
+                    }
+                    else if (stack.peek().marker == StackMarker.LAMBDA_DECL_LEFT_PARENTH){
+                        stack.push(new StackUnit(StackMarker.LAMBDA_DECL_RIGHT_PARENTH));
+                        // todo
+                        // add spaces in function decl (2 cases)
+                    } else if (stack.peek().marker == StackMarker.DO_WHILE_PARENTH_LEFT){
                         stack.push(new StackUnit(StackMarker.DO_WHILE_PARENTH_RIGHT));
                     } else if (stack.peek().marker == StackMarker.IF_PARENTH_LEFT){
                         if (templateProperties.within_if_parenth){
@@ -509,7 +606,11 @@ public class TokensStreamConverter {
                     addTokenToOutput(curToken);
                 }
                 if (curTokenValue.equals(";")){
-                    if (stack.peek().marker == StackMarker.FOR_FIRST_SEMICOLON) {
+                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
+                        stack.pop();
+                        addTokenToOutput(curToken);
+                        addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
+                    } else if (stack.peek().marker == StackMarker.FOR_FIRST_SEMICOLON) {
                         if (templateProperties.other_before_for_semicolon){
                             addSpaceToOutputStream();
                         }
@@ -534,11 +635,23 @@ public class TokensStreamConverter {
                         stack.pop();
                         stack.pop();
                         addTokenToOutput(curToken);
+                    } else {
+                        addTokenToOutput(curToken);
+                        addNewlineWithIndent();
                     }
                 }
 
                 if (curTokenValue.equals("{")) {
-                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
+                    if (stack.peek().marker == StackMarker.FUNCTION_DECL_ARG_RIGHT_PARENTH){
+                          addNewLines(templateProperties.minimum_blank_lines_before_function_body);
+                    } else if (stack.peek().marker == StackMarker.BASE_COLON){
+                        removeFromStack(2);
+                        stack.push(new StackUnit(StackMarker.CLASS_DEF_LEFT_BRACE));
+                        addTokenToOutput(curToken);
+//                        addNewline();
+                        nestingLevel++;
+                        addNewlineWithIndent();
+                    } else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.CLASS_DEF_LEFT_BRACE));
                         addTokenToOutput(curToken);
@@ -579,6 +692,8 @@ public class TokensStreamConverter {
                             addSpaceToOutputStream();
                         }
                         addTokenToOutput(curToken);
+                        nestingLevel++;
+                        addNewlineWithIndent();
                     } else if (stack.peek().marker == StackMarker.CATCH_RIGHT_PARENTH){
                         removeFromStack(2); // ()
                         stack.push(new StackUnit(StackMarker.CATCH_LEFT_BRACE));
@@ -612,7 +727,12 @@ public class TokensStreamConverter {
                         addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("}")) {
-                    if (stack.peek().marker == StackMarker.CLASS_DEF_LEFT_BRACE){
+                    if (stack.peek().marker == StackMarker.SWITCH_LEFT_BRACE){
+                        stack.pop();
+                        this.nestingLevel--;
+                        addNewlineWithIndent();
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.CLASS_DEF_LEFT_BRACE){
                         this.stack.pop();
                         this.nestingLevel--;
                         addNewlineWithIndent();
@@ -625,7 +745,8 @@ public class TokensStreamConverter {
                     } else if (stack.peek().marker == StackMarker.DO_WHILE_LFT_BR){
                         this.stack.push(new StackUnit(StackMarker.DO_WHILE_RHT_BR));
                         this.nestingLevel--;
-                        addNewlineWithIndent();
+//                        addNewlineWithIndent(); //todo fix - remove
+                        addIndent();
                         addTokenToOutput(curToken);
                     }
 
@@ -667,6 +788,20 @@ public class TokensStreamConverter {
 
     public void addNewlineWithIndent() {
         this.outputStream.add(new Token(TokenNameAllowed.SPACES, NEWLINE.concat(this.getCurrentIndent())));
+    }
+
+    public void addNewline(){
+        this.outputStream.add(new Token(TokenNameAllowed.SPACES, NEWLINE));
+    }
+
+    public void addNewLines(int quantity){
+        for (int i=0; i<quantity; i++){
+            addNewline();
+        }
+    }
+
+    public void addIndent(){
+        this.outputStream.add(new Token(TokenNameAllowed.SPACES, this.getCurrentIndent()));
     }
 
     public void addTokenToOutput(Token token){
@@ -776,11 +911,12 @@ public class TokensStreamConverter {
 
         Token last = null;
         int lastIndex = outputStream.size() - 1;
+        last = outputStream.get(lastIndex);
         for (; lastIndex>=0 && (last.getName().getTokenName() == TokenNameAllowed.SPACES); lastIndex--){
             last = outputStream.get(lastIndex);
         }
 
-        if (last.getName().getTokenName() == TokenNameAllowed.SPACES){
+        if (last!= null && last.getName().getTokenName() == TokenNameAllowed.SPACES){
             return null;
         }
 
@@ -794,9 +930,14 @@ public class TokensStreamConverter {
 
         Token last = null;
         int lastIndex = outputStream.size() - 1;
-        for (; lastIndex>=0 && ((last.getName().getTokenName() == TokenNameAllowed.SPACES)
-                || last.getName().getTokenName() == TokenNameAllowed.COMMENT); lastIndex--){
+        while(lastIndex>=0){
             last = outputStream.get(lastIndex);
+            if (last.getName().getTokenName() == TokenNameAllowed.SPACES ||
+                    last.getName().getTokenName() == TokenNameAllowed.COMMENT){
+                lastIndex--;
+            } else {
+                break;
+            }
         }
 
         if (last.getName().getTokenName() == TokenNameAllowed.SPACES

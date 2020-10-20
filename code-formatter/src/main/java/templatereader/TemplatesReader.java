@@ -94,6 +94,20 @@ public class TemplatesReader {
         templateProperties.around_relational_ops = true;
         templateProperties.around_equality_ops = true;
 
+        templateProperties.class_structure_bf_base_class_colon = true;
+        templateProperties.class_structure_af_base_class_colon = true;
+        templateProperties.other_before_comma = true;
+        templateProperties.other_after_comma = true;
+
+        templateProperties.minimum_blank_lines_before_includes = 0;
+        templateProperties.minimum_blank_lines_after_includes = 2;
+        templateProperties.minimum_blank_lines_around_class_structure = 4;
+        templateProperties.minimum_blank_lines_before_function_body = 1;
+
+        templateProperties.within_function_declaration_parenth = true;
+        templateProperties.before_function_declaration_parentheses = true;
+        templateProperties.within_empty_function_declaration_parenth = true;
+
         return templateProperties;
     }
 

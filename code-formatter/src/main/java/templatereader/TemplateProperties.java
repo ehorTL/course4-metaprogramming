@@ -150,15 +150,48 @@ public class TemplateProperties {
     public int keep_max_blank_lines_in_declarations;
     public int keep_max_blank_lines_in_code;
     public int keep_max_blank_lines_in_before_right_brace;
-    public int minimum_blank_lines_before_includes;
-    public int minimum_blank_lines_after_includes;
-    public int minimum_blank_lines_around_class_structure;
-    public int minimum_blank_lines_after_class_structure_header;
+    public int minimum_blank_lines_before_includes; // +
+    public int minimum_blank_lines_after_includes; //+
+    public int minimum_blank_lines_around_class_structure; // +-
+    public int minimum_blank_lines_after_class_structure_header; // - what is the "class header"?
     public int minimum_blank_lines_around_field;
     public int minimum_blank_lines_around_global_variable;
     public int minimum_blank_lines_around_function_declaration;
     public int minimum_blank_lines_around_function_definition;
-    public int minimum_blank_lines_before_function_body;
+    public int minimum_blank_lines_before_function_body; // -+
+
+    /**
+     * WRAPPING AND BRACES
+     * */
+
+    /**
+     * Enum Constants
+     * */
+    public boolean enum_constants_comma_on_next_line;
+
+    /**
+     * Try Statement
+     * */
+    public boolean try_statement_catch_on_new_line;
+
+    /**
+     * Switch Statement
+     * */
+    public boolean switch_statement_indent_case_branches;
+    public boolean switch_statement_keep_simple_cases_in_one_line; // -
+
+    /**
+     * Do-while Statement
+     * */
+    public boolean do_while_statement_while_on_new_line;
+
+    /**
+     * Keep when reformatting
+     * */
+    public boolean keep_nested_namespaces_in_one_line;
+
+
+
 
     public TemplateProperties() { }
 }

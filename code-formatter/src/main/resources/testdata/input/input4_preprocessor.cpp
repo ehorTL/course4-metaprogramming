@@ -5,8 +5,21 @@
 
 #define FALSE 0
 
+class d;
+
+// void foo();
+// int t = 12;
+
+// int b;
+// class B;
+class f : public v, private g{int a;}
+// class C{};
+
+// C fooo();
+// C fooo(){}
+
 template<typename K>
-class A{} // void foo();
+class A{int a;} // void foo();
 // hello world
 
 /**
