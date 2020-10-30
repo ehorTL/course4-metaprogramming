@@ -1,10 +1,5 @@
 package templatereader;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
  * braces - {}
  * parentheses - ()
@@ -189,8 +184,6 @@ public class TemplateProperties {
      * Keep when reformatting
      * */
     public boolean keep_nested_namespaces_in_one_line;
-
-
 
 
     public TemplateProperties() { }

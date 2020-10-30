@@ -108,6 +108,9 @@ public class TemplatesReader {
         templateProperties.before_function_declaration_parentheses = true;
         templateProperties.within_empty_function_declaration_parenth = true;
 
+        templateProperties.other_before_for_semicolon = true;
+        templateProperties.within_for_parenth = true;
+
         return templateProperties;
     }
 
@@ -127,4 +130,13 @@ public class TemplatesReader {
 
         return false;
     }
+
+    private static int stringToInteger(String string) throws NullPointerException {
+        if (string == null){
+            throw new NullPointerException();
+        }
+        return Integer.parseInt(string);
+    }
+
+
 }

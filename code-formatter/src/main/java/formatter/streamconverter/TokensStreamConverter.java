@@ -56,7 +56,9 @@ public class TokensStreamConverter {
             String curTokenValue = curToken.getValue().getValue();
             TokenNameAllowed curTokenName = curToken.getName().getTokenName();
 
-            if (curTokenName == TokenNameAllowed.COMMENT){
+            if (curToken.isLiteral()){
+                addTokenToOutput(curToken);
+            } else if (curTokenName == TokenNameAllowed.COMMENT){
                 if (curToken.getMeta().isFirstFromLineStart()){
                     addNewlineWithIndent();
                 } else {
@@ -85,7 +87,7 @@ public class TokensStreamConverter {
                 addNewlineWithIndent();
             } else if (curTokenName == TokenNameAllowed.KEYWORD) {
                 if (false){
-                    // int void double but not type casting    
+                    // int void double but not type casting
                 } else if (curTokenValue.equals("private") || curToken.equals("public") || curToken.equals("protected")){
                     if (stack.peek().marker == StackMarker.BASE_COLON){
                         addTokenToOutput(curToken);
@@ -132,7 +134,7 @@ public class TokensStreamConverter {
                     }
                     addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
                     addTokenToOutput(curToken);
-                } else if (curTokenValue.equals("structure")) {
+                } else if (curTokenValue.equals("struct")) {
                     stack.push(new StackUnit(StackMarker.STRUCTURE_DECL));
                     addTokenToOutput(curToken);
                     addSpaceToOutputStream();
@@ -177,6 +179,7 @@ public class TokensStreamConverter {
                 } else {
                     addTokenToOutput(curToken);
                 }
+                addSpaceIfNeeded();
             } else if (curTokenName == TokenNameAllowed.IDENTIFIER) {
                 if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){
                     // todo remove - do nothing
@@ -604,9 +607,9 @@ public class TokensStreamConverter {
                         stack.push(new StackUnit(StackMarker.SWITCH_RIGHT_PARENTH));
                     }
                     addTokenToOutput(curToken);
-                }
-                if (curTokenValue.equals(";")){
-                    if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
+                } else if (curTokenValue.equals(";")){
+                    if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){}
+                    else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
                         stack.pop();
                         addTokenToOutput(curToken);
                         addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
@@ -636,14 +639,18 @@ public class TokensStreamConverter {
                         stack.pop();
                         addTokenToOutput(curToken);
                     } else {
+                        System.out.println(stack.peek());
                         addTokenToOutput(curToken);
                         addNewlineWithIndent();
                     }
-                }
-
-                if (curTokenValue.equals("{")) {
+                } else if (curTokenValue.equals("{")) {
                     if (stack.peek().marker == StackMarker.FUNCTION_DECL_ARG_RIGHT_PARENTH){
-                          addNewLines(templateProperties.minimum_blank_lines_before_function_body);
+                        removeFromStack(2);
+                        addTokenToOutput(curToken);
+                        addNewline();
+                        addNewLines(templateProperties.minimum_blank_lines_before_function_body - 1);
+                        nestingLevel++;
+                        stack.push(new StackUnit(StackMarker.FUNCTION_DECL_LEFT_BRACE));
                     } else if (stack.peek().marker == StackMarker.BASE_COLON){
                         removeFromStack(2);
                         stack.push(new StackUnit(StackMarker.CLASS_DEF_LEFT_BRACE));
@@ -727,7 +734,12 @@ public class TokensStreamConverter {
                         addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("}")) {
-                    if (stack.peek().marker == StackMarker.SWITCH_LEFT_BRACE){
+                    if (stack.peek().marker == StackMarker.FUNCTION_DECL_LEFT_BRACE){
+                        stack.push(new StackUnit(StackMarker.FUNCTION_DECL_RIGHT_BRACE));
+                        nestingLevel--;
+                        addIndent();
+                        addTokenToOutput(curToken);
+                    } else if (stack.peek().marker == StackMarker.SWITCH_LEFT_BRACE){
                         stack.pop();
                         this.nestingLevel--;
                         addNewlineWithIndent();
@@ -756,22 +768,6 @@ public class TokensStreamConverter {
             this.lookahead_index++; // ?
         }
 
-    }
-
-    public void handleLeftBrace() {
-        this.outputStream.add(new Token(TokenNameAllowed.PUNCTUATOR,"("));
-        this.nestingBraces++;
-        lookahead_index++;
-    }
-
-    public void handleRightBrace() throws ConverterException {
-        if (this.nestingBraces != 0) {
-            this.outputStream.add(new Token(TokenNameAllowed.PUNCTUATOR,"("));
-            this.nestingBraces--;
-            lookahead_index++;
-        } else {
-            throw new ConverterException("nesting braces error");
-        }
     }
 
     public void addSpaceToOutputStream(){
@@ -923,6 +919,31 @@ public class TokensStreamConverter {
         return last;
     }
 
+    private boolean spaceNeededAfterCurrentToken(){
+        Token curToken = null;
+        if (lookahead_index>=0 && lookahead_index<inputStream.size()){
+            curToken = inputStream.get(lookahead_index);
+        }
+        if (curToken == null) return false;
+
+        Token nextToken = peekNextTokenIfExist();
+        if (nextToken == null) return false;
+
+        if ((curToken.getName().getTokenName() == TokenNameAllowed.KEYWORD || curToken.getName().getTokenName()
+                == TokenNameAllowed.IDENTIFIER) && (nextToken.getName().getTokenName() == TokenNameAllowed.KEYWORD
+                || nextToken.getName().getTokenName() == TokenNameAllowed.IDENTIFIER)){
+            return true;
+        }
+
+        return false;
+    }
+
+    private void addSpaceIfNeeded(){
+        if (spaceNeededAfterCurrentToken()){
+            addSpaceToOutputStream();
+        }
+    }
+
     private Token lastNonSpaceNonCommentTokenInOutput(){
         if (outputStream.size() == 0){
             return null;
@@ -963,6 +984,26 @@ public class TokensStreamConverter {
         }
 
         return false;
+    }
+
+    private void clearStackFromMarkersLast(ArrayList<StackMarker> markers){
+        StackMarker sm = null;
+        sm = stack.peek().marker;
+        while (true){
+            boolean found = false;
+            for (StackMarker marker : markers){
+                if (sm == marker){
+                    stack.pop();
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found || (stack.size() == 0)){
+                return;
+            }
+            sm = stack.peek().marker;
+        }
     }
 
 }

@@ -3,6 +3,7 @@ package formatter.dirtree;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class FileManager {
 
@@ -55,5 +56,11 @@ public class FileManager {
         } else {
             return exts[exts.length - 1];
         }
+    }
+
+    public static String getFileNameFromPath(String filename){
+        String[] slices = filename.split(Pattern.quote("\\"));
+
+        return slices[slices.length - 1];
     }
 }

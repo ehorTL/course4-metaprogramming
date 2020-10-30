@@ -16,3 +16,16 @@ dependencies {
     compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
     compile group: 'org.json', name: 'json', version: '20090211'
 }
+
+jar {
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes(
+                "Main-Class": "formatter.Formatter"
+        )
+    }
+    destinationDirectory = file("$rootDir/executable")
+    archivesBaseName = 'app'
+}

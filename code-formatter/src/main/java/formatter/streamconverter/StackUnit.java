@@ -12,4 +12,9 @@ public class StackUnit {
     public StackUnit(StackMarker marker) {
         this.marker = marker;
     }
+
+    @Override
+    public String toString() {
+        return "Marker: " + this.marker + " --- pos: " + startsFromPosition;
+    }
 }
