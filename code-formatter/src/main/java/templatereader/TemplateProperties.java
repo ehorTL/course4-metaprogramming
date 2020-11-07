@@ -1,5 +1,7 @@
 package templatereader;
 
+import templatereader.util.BracesPlacement;
+
 /**
  * braces - {}
  * parentheses - ()
@@ -132,16 +134,9 @@ public class TemplateProperties {
     public boolean template_instantiation_within_brackets;
     public boolean template_instantiation_within_empty_brackets;
 
-
-    /**
-     * Wrapping and Braces block
-     * ------
-     * */
-
     /**
      * BLANK LINES
      * */
-
     public int keep_max_blank_lines_in_declarations;
     public int keep_max_blank_lines_in_code;
     public int keep_max_blank_lines_in_before_right_brace;
@@ -158,6 +153,12 @@ public class TemplateProperties {
     /**
      * WRAPPING AND BRACES
      * */
+
+    public BracesPlacement bp_in_classes_and_structures;
+    public BracesPlacement bp_in_namespaces;
+    public BracesPlacement bp_in_functions;
+    public BracesPlacement bp_in_lambdas;
+    public BracesPlacement bp_other;
 
     /**
      * Enum Constants

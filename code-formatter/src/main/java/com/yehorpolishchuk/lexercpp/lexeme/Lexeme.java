@@ -87,6 +87,13 @@ public class Lexeme {
         return c == ' ' || c == '\t' || c == '\013' || c == '\014' || c == '\n';
     }
 
+    public static boolean isNewline(char c){
+        return c == '\n';
+    }
+    public static boolean isNewline(String c){
+        return c == "\n";
+    }
+
     public static boolean isWhitespaceWithoutNewLine(char c){
         return  (c != '\n') && isWhitespace(c);
     }

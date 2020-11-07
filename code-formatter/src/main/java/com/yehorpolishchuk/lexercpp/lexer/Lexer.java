@@ -3,6 +3,7 @@ package com.yehorpolishchuk.lexercpp.lexer;
 import com.yehorpolishchuk.lexercpp.lexeme.Lexeme;
 import com.yehorpolishchuk.lexercpp.token.Token;
 import com.yehorpolishchuk.lexercpp.token.TokenMetadata;
+import com.yehorpolishchuk.lexercpp.token.TokenName;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
 import static com.yehorpolishchuk.lexercpp.token.TokenNameAllowed.*;
@@ -203,10 +205,9 @@ public class Lexer {
             }
 
             //logging transitions of DFA
-            System.out.println(" ---> " + state);
+//            System.out.println(" ---> " + state);
 
             this.indexPointerRawCodeStream++;
-
             linesCounterControlAfterChanges();
         }
 
@@ -1077,6 +1078,9 @@ public class Lexer {
     private void maybePPDirective2(char c){
         if (Lexeme.isWhitespace(c)){
             state = 2; //retain the same state
+            if (Lexeme.isNewline(c)){
+                addToken(NEWLINE, '\n');
+            }
         } else if (c == '#'){
             moveAndAddToBuffer('#', 3);
         } else {
@@ -1254,6 +1258,25 @@ public class Lexer {
 
 
     public ArrayList<Token> getTokens() {
+        defineBlankLines();
         return tokens;
+    }
+
+    private void defineBlankLines(){
+        // at least one token must be present ('\n')
+        if (tokens.size() == 0){
+            return;
+        }
+
+        if (tokens.get(0).getName().getTokenName() == NEWLINE){
+            tokens.remove(0);
+        }
+
+        // todo value should be replaced with more relevant??
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).getName().getTokenName() == NEWLINE){
+                tokens.set(i, new Token(BLANK_LINE, "\n"));
+            }
+        }
     }
 }

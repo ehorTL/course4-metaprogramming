@@ -31,7 +31,7 @@ public enum StackMarker {
 
     FOR,
     FOR_LEFT_BRACE,
-    FOR_RIGHT_BACE,
+    FOR_RIGHT_BRACE,
     FOR_LEFT_PARENTH,
     FOR_RIGHT_PARENTH,
     FOR_FIRST_SEMICOLON,

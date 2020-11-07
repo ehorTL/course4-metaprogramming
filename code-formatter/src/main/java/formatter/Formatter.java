@@ -5,10 +5,13 @@ import com.yehorpolishchuk.lexercpp.token.Token;
 import formatter.dirtree.FileManager;
 import formatter.exceptions.ConverterException;
 import formatter.filewriter.TokenFileWriter;
+import formatter.logger.Logger;
 import formatter.streamconverter.TokensStreamConverter;
 import formatter.utils.File;
 import templatereader.TemplateProperties;
 import templatereader.TemplatesReader;
+import templatereader.util.BracesPlacement;
+import templatereader.util.TemplateTypes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,12 +22,16 @@ import java.util.ArrayList;
 /**
  * Implementation of C++ code formatter.
  * Entry point for the whole application.
+ *
+ * Do not forget before production to set 'DEBUG = false' !
  * */
 public class Formatter {
 
     private static final boolean DEBUG = true;
-    private static final String DEBUG_OUTPUT_DIE_SUFFIX = "\\src\\main\\resources\\testdata\\output\\";
+    private static final String DEBUG_OUTPUT_DIR_SUFFIX = "\\src\\main\\resources\\testdata\\output\\";
+    private static final String DEBUG_INPUT_DIR_SUFFIX = "\\src\\main\\resources\\testdata\\input\\";
     private static final String TEMP_DIR_SUFFIX = "\\src\\main\\resources\\tmp\\";
+    private static final String TEMPLATE_DIR = "\\src\\main\\resources\\templates\\";
 
     public static void format(String fileFullName, TemplateProperties templateProperties) throws IOException, ConverterException {
         String tempFileName = System.getProperty("user.dir") + TEMP_DIR_SUFFIX + FileManager.getFileNameFromPath(fileFullName);
@@ -38,7 +45,7 @@ public class Formatter {
      *
      * @param fileFullName The full path to C++ file (.cpp)
      * */
-    public static void format(String fileFullName, String outputFileName, TemplateProperties templateProperties) throws IOException, ConverterException {
+    public static ArrayList<Token> format(String fileFullName, String outputFileName, TemplateProperties templateProperties) throws IOException, ConverterException {
         Lexer lexer = new Lexer (fileFullName);
         lexer.parse();
         ArrayList<Token> tokens = lexer.getTokens();
@@ -51,11 +58,21 @@ public class Formatter {
         tokensStreamConverter.convert();
         ArrayList<Token> output = tokensStreamConverter.getTokens();
 
+        // fix added
+        TokensStreamConverter.removeDoubleSpaces(output);
+
         TokenFileWriter tokenFileWriter = new TokenFileWriter(output, outputFileName);
         tokenFileWriter.write();
+
+        return output;
     }
 
     public static void main(String[] args) throws IOException, ConverterException, NoSuchFieldException, IllegalAccessException {
+        if (DEBUG) {
+            testFormat();
+            return;
+        }
+
         commandHandler(args);
     }
 
@@ -133,9 +150,15 @@ public class Formatter {
                 if (DEBUG){
                     String outputFileName = System.getProperty("user.dir") + TEMP_DIR_SUFFIX + FileManager.getFileNameFromPath(filepath);
                     format(filepath, outputFileName, templateProperties);
-                } else {
-                    format(filepath,templateProperties);
+                    return;
                 }
+
+                if (args[0].equals("format") || args[0].equals("f")){
+                    format(filepath,templateProperties);
+                } else {
+                    verify(filepath, templateProperties, logfileName);
+                }
+
                 System.out.println("Successfully done");
             }
         }
@@ -186,4 +209,38 @@ public class Formatter {
         System.out.println("Terminating...");
     }
 
+    /**
+     * @param logFileName the absolute path to the error logging file
+     * */
+    public static void verify(String inputFileName, TemplateProperties templateProperties, String logFileName) throws IOException, ConverterException {
+        Logger logger = new Logger(logFileName);
+        String tempFileName = System.getProperty("user.dir") + TEMP_DIR_SUFFIX + FileManager.getFileNameFromPath(inputFileName);
+        ArrayList<Token> outputStream = format(inputFileName, tempFileName, templateProperties);
+        // todo verify
+
+        // the same as format() + comparing to initial file (source)
+        // option 1: reading input file and output tokens stream, mark position + error type (optionally)
+        // option 2: reading input file and output file, just marking positions
+        // alternative 2 should be used
+
+        // remove as a side effect
+        Files.delete(Paths.get(tempFileName));
+    }
+
+
+    /**
+     * Used while debugging.
+     * Set input and template variables to your test file names.
+     * */
+    public static void testFormat() throws IOException, ConverterException, NoSuchFieldException, IllegalAccessException {
+        String input = "test.cpp";
+        String template = "template.properties";
+
+        String inputFullPath = System.getProperty("user.dir") + DEBUG_INPUT_DIR_SUFFIX + input;
+        String templateFullPath = System.getProperty("user.dir") + TEMPLATE_DIR + template;
+        String outputFullPath = System.getProperty("user.dir") + DEBUG_OUTPUT_DIR_SUFFIX + input;
+
+        TemplateProperties templateProperties = TemplatesReader.getTemplate(templateFullPath);
+        format(inputFullPath, outputFullPath, templateProperties);
+    }
 }

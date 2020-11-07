@@ -60,8 +60,19 @@
 //     return (0);
 // }
 
-mytype myname(){
-    void foo(){
-        for(int i=0; i<10;i++){}       
-    }
+// mytype myname(){
+//     void foo(){
+//         for(int i=0; i<10;i++){}
+//     }
+// }
+
+// for (int i=0; i<10; i++){}
+int i;
+for (;;)
+{
+    ;
+}
+
+while (true)
+{
 }

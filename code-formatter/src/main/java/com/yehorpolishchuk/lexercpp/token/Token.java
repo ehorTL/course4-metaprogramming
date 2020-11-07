@@ -1,5 +1,7 @@
 package com.yehorpolishchuk.lexercpp.token;
 
+import com.yehorpolishchuk.lexercpp.lexeme.Lexeme;
+
 public  class Token {
     private TokenName name;
     private TokenValue value;

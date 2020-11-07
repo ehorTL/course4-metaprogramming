@@ -1,12 +1,12 @@
 package formatter.streamconverter;
 
 import com.yehorpolishchuk.lexercpp.token.Token;
-import com.yehorpolishchuk.lexercpp.token.TokenName;
 import com.yehorpolishchuk.lexercpp.token.TokenNameAllowed;
 import formatter.exceptions.ConverterException;
 import templatereader.TemplateProperties;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Stack;
 
 public class TokensStreamConverter {
@@ -17,6 +17,8 @@ public class TokensStreamConverter {
     private Stack<StackUnit> stack;
     private int nestingLevel = 0;
     private int nestingBraces = 0;
+    private ArrayList<Token> buffer = null;
+    private StateTracer state;
 
     private TemplateProperties templateProperties;
     private static final String NEWLINE = "\n";
@@ -31,6 +33,9 @@ public class TokensStreamConverter {
         this.nestingLevel = 0;
         this.stack = new Stack<>();
         this.stack.push(new StackUnit(StackMarker.STACK_FIRST_MARKER));
+
+        this.buffer = new ArrayList<>();
+        state = new StateTracer();
     }
 
     public TokensStreamConverter(ArrayList<Token> inputStream, TemplateProperties templateProperties){
@@ -42,6 +47,9 @@ public class TokensStreamConverter {
         this.templateProperties = templateProperties;
         this.stack = new Stack<>();
         this.stack.push(new StackUnit(StackMarker.STACK_FIRST_MARKER));
+
+        this.buffer = new ArrayList<>();
+        state = new StateTracer();
     }
 
     public ArrayList<Token> getTokens() {
@@ -56,19 +64,17 @@ public class TokensStreamConverter {
             String curTokenValue = curToken.getValue().getValue();
             TokenNameAllowed curTokenName = curToken.getName().getTokenName();
 
+            addNewlineIfNeeded(curToken);
+
             if (curToken.isLiteral()){
                 addTokenToOutput(curToken);
+            } else if (curTokenName == TokenNameAllowed.BLANK_LINE){
+                addTokenToOutput(curToken);
             } else if (curTokenName == TokenNameAllowed.COMMENT){
-                if (curToken.getMeta().isFirstFromLineStart()){
-                    addNewlineWithIndent();
-                } else {
+                if (!curToken.getMeta().isFirstFromLineStart()){
                     addSpaceToOutputStream();
                 }
-
                 addTokenToOutput(curToken);
-                if (curToken.isSingleLineComment()){
-                    addNewlineWithIndent();
-                }
             } else if (curTokenName == TokenNameAllowed.PREPROCESSOR_DIR){
                 if (lastNonSpaceTokenInOutput() != null){
                     if (lastNonSpaceTokenInOutput().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
@@ -86,8 +92,10 @@ public class TokensStreamConverter {
                 }
                 addNewlineWithIndent();
             } else if (curTokenName == TokenNameAllowed.KEYWORD) {
-                if (false){
-                    // int void double but not type casting
+                if (curTokenValue.equals("int") || curTokenValue.equals("void") || curTokenValue.equals("float")
+                || curTokenValue.equals("double") || curTokenValue.equals("bool") || curTokenValue.equals("char")){
+                    addTokenToOutput(curToken);
+                    addSpaceIfNeeded();
                 } else if (curTokenValue.equals("private") || curToken.equals("public") || curToken.equals("protected")){
                     if (stack.peek().marker == StackMarker.BASE_COLON){
                         addTokenToOutput(curToken);
@@ -195,10 +203,8 @@ public class TokensStreamConverter {
                 } else if (stack.peek().marker == StackMarker.TEMPLATE_LEFT_ANGLE_BRACKET){
                     // do nothing
                 } else {
-//                    addSpaceToOutputStream(); // todo remove new line
                     stack.push(new StackUnit(StackMarker.ID_MAYBE_DECL));
                 }
-//                addSpaceToOutputStream();
                 addTokenToOutput(curToken);
             } else if (curTokenName == TokenNameAllowed.OPERATOR) {
                 if (curTokenValue.equals("::")){
@@ -490,8 +496,7 @@ public class TokensStreamConverter {
                                 }
                             }
                         }
-                    }
-                    else if (stack.peek().marker == StackMarker.CAPTURE_LIST_RIGHT_BRACKET){
+                    } else if (stack.peek().marker == StackMarker.CAPTURE_LIST_RIGHT_BRACKET){
                         removeFromStack(2); // pop []
                         stack.push(new StackUnit(StackMarker.LAMBDA_DECL_LEFT_PARENTH));
                         addTokenToOutput(curToken);
@@ -535,6 +540,7 @@ public class TokensStreamConverter {
                         }
                     } else if (stack.peek().marker == StackMarker.IF){
                         stack.pop();
+                        state.inForParentheses = true;
                         stack.push(new StackUnit(StackMarker.IF_PARENTH_LEFT));
                         if (templateProperties.before_if_parentheses){
                             addSpaceToOutputStream();
@@ -562,6 +568,7 @@ public class TokensStreamConverter {
                     }
 //                    addTokenToOutput(curToken);
                 } else if (curTokenValue.equals(")")){
+                    popUntilLeftParenth(this.stack); //fix
                     if (stack.peek().marker == StackMarker.FUNCTION_DECL_ARG_LEFT_PARENTH){
 //                        removeFromStack(1);
                         stack.push(new StackUnit(StackMarker.FUNCTION_DECL_ARG_RIGHT_PARENTH));
@@ -579,17 +586,18 @@ public class TokensStreamConverter {
                         stack.push(new StackUnit(StackMarker.IF_PARENTH_RIGHT));
                     } else if (stack.peek().marker == StackMarker.FOR_SECOND_SEMICOLON){
                         removeFromStack(2); // ;;
+                        state.inForParentheses = false;
                         if (templateProperties.within_for_parenth){
                             addSpaceToOutputStream();
                         }
                         stack.push(new StackUnit(StackMarker.FOR_RIGHT_PARENTH));
                     }
-//                    else if (stack.peek().marker == StackMarker.FOR_LEFT_PARENTH){
-//                        if (templateProperties.within_for_parenth){
-//                            addSpaceToOutputStream();
-//                        }
-//                        stack.push(new StackUnit(StackMarker.FOR_RIGHT_PARENTH));
-//                    }
+                    else if (stack.peek().marker == StackMarker.FOR_LEFT_PARENTH){
+                        if (templateProperties.within_for_parenth){
+                            addSpaceToOutputStream();
+                        }
+                        stack.push(new StackUnit(StackMarker.FOR_RIGHT_PARENTH));
+                    }
                     else if (stack.peek().marker == StackMarker.WHILE_LEFT_PARENTH){
                         if (templateProperties.within_while_parenth){
                             addSpaceToOutputStream();
@@ -608,8 +616,20 @@ public class TokensStreamConverter {
                     }
                     addTokenToOutput(curToken);
                 } else if (curTokenValue.equals(";")){
-                    if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){}
-                    else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
+                    if (state.inForParentheses){
+                        if (templateProperties.other_before_for_semicolon){
+                            addSpaceToOutputStream();
+                        }
+                        addTokenToOutput(curToken);
+                        if (templateProperties.other_after_for_semicolon) {
+                            addSpaceToOutputStream();
+                        }
+                    }
+                    else
+                    if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){
+                        addTokenToOutput(curToken);
+                        addNewlineWithIndent();
+                    } else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
                         stack.pop();
                         addTokenToOutput(curToken);
                         addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
@@ -671,6 +691,8 @@ public class TokensStreamConverter {
                             addSpaceToOutputStream();
                         }
                         addTokenToOutput(curToken);
+                        nestingLevel++;
+                        addNewlineWithIndent();
                     } else if (stack.peek().marker == StackMarker.ELSE){
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.ELSE_LEFT_BRACE));
@@ -734,7 +756,13 @@ public class TokensStreamConverter {
                         addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("}")) {
-                    if (stack.peek().marker == StackMarker.FUNCTION_DECL_LEFT_BRACE){
+                    if (stack.peek().marker == StackMarker.FOR_LEFT_BRACE){
+                        removeFromStack(1);
+                        nestingLevel--;
+                        addIndent();
+                        addTokenToOutput(curToken);
+                    }
+                    else if (stack.peek().marker == StackMarker.FUNCTION_DECL_LEFT_BRACE){
                         stack.push(new StackUnit(StackMarker.FUNCTION_DECL_RIGHT_BRACE));
                         nestingLevel--;
                         addIndent();
@@ -969,6 +997,40 @@ public class TokensStreamConverter {
         return last;
     }
 
+    private static boolean isSpace(Token token){
+        if(token == null){
+            return false;
+        }
+
+        if (token.getName().getTokenName() == TokenNameAllowed.SPACES &&
+            token.getValue().getValue().equals(SPACE)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Removes sequences of spaces (SPACE) in tokens "stream".
+     * Used after formatting for clearing unnecessary spaces.
+     * */
+    public static void removeDoubleSpaces(ArrayList<Token> tokens){
+        Iterator<Token> it = tokens.iterator();
+        boolean prevIsSpace = false;
+
+        while(it.hasNext()){
+            Token t = it.next();
+            if (isSpace(t)){
+                if (prevIsSpace){
+                    it.remove();
+                }
+                prevIsSpace = true;
+            } else {
+                prevIsSpace = false;
+            }
+        }
+    }
+
     /**
      * Checks if last not spacing token equals "}".
      * Can be used when
@@ -985,6 +1047,26 @@ public class TokensStreamConverter {
 
         return false;
     }
+
+    private StackUnit popUntilLeftParenth(Stack stack){
+        StackUnit stackUnit = (StackUnit) stack.peek();
+        while(stackUnit.marker != StackMarker.FOR_LEFT_PARENTH && stackUnit.marker != StackMarker.IF_PARENTH_LEFT &&
+                stackUnit.marker != StackMarker.WHILE_LEFT_PARENTH && stackUnit.marker != StackMarker.STACK_FIRST_MARKER){
+            stack.pop();
+            stackUnit = (StackUnit) stack.peek();
+        }
+
+        return stackUnit;
+    }
+
+//    private void handleSemicolon(Token currentToken){
+//        if (false){
+//
+//        } else {
+//            addTokenToOutput(currentToken);
+//            addNewlineWithIndent();
+//        }
+//    }
 
     private void clearStackFromMarkersLast(ArrayList<StackMarker> markers){
         StackMarker sm = null;
@@ -1004,6 +1086,34 @@ public class TokensStreamConverter {
             }
             sm = stack.peek().marker;
         }
+    }
+
+    private void addNewlineIfNeeded(Token curToken){
+        Token prev = peekPrevTokenIfExists();
+        if (prev == null){
+            return;
+        }
+
+
+        if (prev.getName().getTokenName() == TokenNameAllowed.COMMENT){
+            if (prev.isSingleLineComment()){
+                addNewline();
+            } else {
+//                todo ????
+                addNewline();
+            }
+        } else if (prev.getName().getTokenName() == TokenNameAllowed.BLANK_LINE){
+            return; // do nothing
+        } else if (prev.getName().getTokenName() == TokenNameAllowed.PUNCTUATOR){
+            if (prev.getValue().getValue().equals(";")){
+                if (false){
+
+                } else {
+//                    addNewline();
+                }
+            }
+        }
+
     }
 
 }
