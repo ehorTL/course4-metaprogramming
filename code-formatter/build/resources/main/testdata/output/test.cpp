@@ -1,4 +1,5 @@
-// #include <iostream>
+#ifdef GHGHG
+#include <iostream>
 
 // void printArray(int *array, int n)
 // {
@@ -68,6 +69,6 @@
 
 // for (int i=0; i<10; i++){}
 int i;
-for ( ; ; ) {;
-}
+for ( ; int a ; ) // dikgjdiu
+ { ; }
 while (true){

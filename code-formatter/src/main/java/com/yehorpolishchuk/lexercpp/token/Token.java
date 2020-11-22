@@ -60,5 +60,8 @@ public  class Token {
         return false;
     }
 
+    public boolean isIncludeDirective(){
+        return value.getValue().matches("[    ]*#[    ]*include(.)*");
+    }
 
 }

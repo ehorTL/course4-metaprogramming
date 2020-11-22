@@ -120,7 +120,7 @@ public class TemplatesReader {
 
         // testing
         templateProperties.minimum_blank_lines_before_includes = 0;
-        templateProperties.minimum_blank_lines_after_includes = 2;
+        templateProperties.minimum_blank_lines_after_includes = 0;
         templateProperties.minimum_blank_lines_around_class_structure = 4;
         templateProperties.minimum_blank_lines_before_function_body = 1;
 

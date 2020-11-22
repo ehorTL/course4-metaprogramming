@@ -76,21 +76,14 @@ public class TokensStreamConverter {
                 }
                 addTokenToOutput(curToken);
             } else if (curTokenName == TokenNameAllowed.PREPROCESSOR_DIR){
-                if (lastNonSpaceTokenInOutput() != null){
-                    if (lastNonSpaceTokenInOutput().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
-                        addNewLines(templateProperties.minimum_blank_lines_before_includes);
-                    }
-                } else {
-                    this.addNewLines(templateProperties.minimum_blank_lines_after_includes);
-                }
                 addTokenToOutput(curToken);
-                if (peekNextTokenIfExist() != null){
-                    if (peekNextTokenIfExist().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
-                        // todo single line comments next ?
-                        this.addNewLines(templateProperties.minimum_blank_lines_after_includes);
-                    }
-                }
-                addNewlineWithIndent();
+//                if (peekNextTokenIfExist() != null){
+//                    if (peekNextTokenIfExist().getName().getTokenName() != TokenNameAllowed.PREPROCESSOR_DIR){
+//                        // todo single line comments next ?
+//                        this.addNewLines(templateProperties.minimum_blank_lines_after_includes);
+//                    }
+//                }
+//                addNewlineWithIndent();
             } else if (curTokenName == TokenNameAllowed.KEYWORD) {
                 if (curTokenValue.equals("int") || curTokenValue.equals("void") || curTokenValue.equals("float")
                 || curTokenValue.equals("double") || curTokenValue.equals("bool") || curTokenValue.equals("char")){
@@ -531,6 +524,7 @@ public class TokensStreamConverter {
                     } else if (stack.peek().marker == StackMarker.FOR){
                         stack.pop();
                         stack.push(new StackUnit(StackMarker.FOR_LEFT_PARENTH));
+                        state.inForParentheses = true;
                         if (this.templateProperties.before_for_parentheses){
                             addSpaceToOutputStream();
                         }
@@ -540,7 +534,6 @@ public class TokensStreamConverter {
                         }
                     } else if (stack.peek().marker == StackMarker.IF){
                         stack.pop();
-                        state.inForParentheses = true;
                         stack.push(new StackUnit(StackMarker.IF_PARENTH_LEFT));
                         if (templateProperties.before_if_parentheses){
                             addSpaceToOutputStream();
@@ -628,11 +621,11 @@ public class TokensStreamConverter {
                     else
                     if (stack.peek().marker == StackMarker.ID_MAYBE_DECL){
                         addTokenToOutput(curToken);
-                        addNewlineWithIndent();
+//                        addNewlineWithIndent();
                     } else if (stack.peek().marker == StackMarker.CLASS_NAME_DECL){
                         stack.pop();
                         addTokenToOutput(curToken);
-                        addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
+//                        addNewLines(templateProperties.minimum_blank_lines_around_class_structure);
                     } else if (stack.peek().marker == StackMarker.FOR_FIRST_SEMICOLON) {
                         if (templateProperties.other_before_for_semicolon){
                             addSpaceToOutputStream();
@@ -661,7 +654,7 @@ public class TokensStreamConverter {
                     } else {
                         System.out.println(stack.peek());
                         addTokenToOutput(curToken);
-                        addNewlineWithIndent();
+//                        addNewlineWithIndent();
                     }
                 } else if (curTokenValue.equals("{")) {
                     if (stack.peek().marker == StackMarker.FUNCTION_DECL_ARG_RIGHT_PARENTH){
@@ -1094,7 +1087,16 @@ public class TokensStreamConverter {
             return;
         }
 
+        if (curToken.getValue().getValue().equals("}")){
+            // todo
+            return;
+        }
 
+//        if (curToken.getName().getTokenName() == TokenNameAllowed.COMMENT){
+//            if (curToken.getMeta().isFirstFromLineStart()){
+//                addNewline();
+//            }
+//        } else
         if (prev.getName().getTokenName() == TokenNameAllowed.COMMENT){
             if (prev.isSingleLineComment()){
                 addNewline();
@@ -1106,13 +1108,22 @@ public class TokensStreamConverter {
             return; // do nothing
         } else if (prev.getName().getTokenName() == TokenNameAllowed.PUNCTUATOR){
             if (prev.getValue().getValue().equals(";")){
-                if (false){
-
-                } else {
-//                    addNewline();
+                if (!state.inForParentheses){
+                    // after class/struct declaration, other declarations
+                    addNewline();
                 }
             }
-        }
+        } else if (prev.getName().getTokenName() == TokenNameAllowed.PREPROCESSOR_DIR){
+                if (prev.isIncludeDirective() && !curToken.isIncludeDirective()){
+                    addNewLines(templateProperties.minimum_blank_lines_after_includes + 1);
+                } else if (!prev.isIncludeDirective() && curToken.isIncludeDirective()){
+                    addNewLines( templateProperties.minimum_blank_lines_before_includes + 1);
+                }
+                else {
+                    // + prev.isIncludeDirective(   ) && curToken.isIncludeDirective()
+                    addNewline();
+                }
+            }
 
     }
 
