@@ -1,7 +1,5 @@
 package com.yehorpolishchuk.lexercpp.token;
 
-import com.yehorpolishchuk.lexercpp.lexeme.Lexeme;
-
 public  class Token {
     private TokenName name;
     private TokenValue value;
@@ -64,4 +62,12 @@ public  class Token {
         return value.getValue().matches("[    ]*#[    ]*include(.)*");
     }
 
+    public boolean isComment(){
+        return this.name.getTokenName() == TokenNameAllowed.COMMENT ||
+                this.name.getTokenName() == TokenNameAllowed.COMMENT_SINGLE_LINE;
+    }
+
+    public boolean isBlankLine(){
+        return this.name.getTokenName() == TokenNameAllowed.BLANK_LINE;
+    }
 }

@@ -7,6 +7,7 @@ import formatter.exceptions.ConverterException;
 import formatter.filewriter.TokenFileWriter;
 import formatter.logger.Logger;
 import formatter.streamconverter.TokensStreamConverter;
+import formatter.streamconverter.utils.BlankLinesHandler;
 import formatter.utils.File;
 import templatereader.TemplateProperties;
 import templatereader.TemplatesReader;
@@ -50,8 +51,11 @@ public class Formatter {
         lexer.parse();
         ArrayList<Token> tokens = lexer.getTokens();
 
+        BlankLinesHandler bh = new BlankLinesHandler(templateProperties, tokens);
+        tokens = bh.getTokensWithHandledComments();
+
         if (DEBUG){
-            for (Token t : tokens ) System.out.println(t.getName().getTokenName() + " --- " + t.getValue().getValue());
+            for (Token t : tokens) System.out.println(t.getName().getTokenName() + " --- " + t.getValue().getValue());
         }
 
         TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens, templateProperties);

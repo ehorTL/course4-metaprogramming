@@ -117,8 +117,6 @@ public class TemplatesReader {
         templateProperties.before_function_declaration_parentheses = true;
         templateProperties.within_empty_function_declaration_parenth = true;
 
-
-        // testing
         templateProperties.minimum_blank_lines_before_includes = 0;
         templateProperties.minimum_blank_lines_after_includes = 0;
         templateProperties.minimum_blank_lines_around_class_structure = 4;

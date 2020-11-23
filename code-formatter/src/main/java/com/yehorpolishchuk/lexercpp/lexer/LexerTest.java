@@ -14,10 +14,6 @@ import java.util.ListIterator;
 
 public class LexerTest {
     public static void main(String[] args) throws IOException {
-
-//        String s = "#include            \"mylib\"";
-//        System.out.println(s.matches("[    ]*#[    ]*include(.)*"));
-
         if (true) return;
 
         String fileFullName = "C:\\Users\\user\\Desktop\\course4\\metaprogramming\\code-formatter\\src\\main\\resources\\testdata\\input\\test.cpp";
