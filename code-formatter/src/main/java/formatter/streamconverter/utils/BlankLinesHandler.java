@@ -86,8 +86,8 @@ public class BlankLinesHandler {
         }
 
         ArrayList<Token> ans = new ArrayList<>();
-        for (int i=0; i<tokens.size(); i++){
-            if (!toRemove.get(i)){
+        for (int i = 0; i < tokens.size(); i++) {
+            if (!toRemove.get(i)) {
                 ans.add(tokens.get(i));
             }
         }
@@ -95,54 +95,116 @@ public class BlankLinesHandler {
 
     }
 
-    private ArrayList<Token> sanitizeMinimumBlankLines(ArrayList<Token> tokens){
+
+    private Token nexxNotBlankLineToken(ArrayList<Token> tokens, int currentIndex) {
+        for (int i = currentIndex; i < tokens.size(); i++) {
+            if (!tokens.get(i).isBlankLine()) {
+                return tokens.get(i);
+            }
+        }
+
+        return null;
+    }
+
+    private Token prevNotBlankLineToken(ArrayList<Token> tokens, int currentIndex) {
+        for (int i = currentIndex; i >= 0; i--) {
+            if (!tokens.get(i).isBlankLine()) {
+                return tokens.get(i);
+            }
+        }
+
+        return null;
+    }
+
+    private ArrayList<Token> sanitizeMinimumBlankLines(ArrayList<Token> tokens) {
         ArrayList<Token> ans = new ArrayList<>();
 
-        ArrayList<Token> tokensHandled = new ArrayList<>();
-
-        int nestedLevel = 0;
-        ArrayList<Boolean> toRemove = new ArrayList<>(), toAddAfterCurrent = new ArrayList<>();
-        for (int i = 0; i < inputTokens.size(); i++) {
-            toRemove.add(false);
-            toAddAfterCurrent.add(false);
+        // #include handling
+        int ind = 0;
+        Token t = null;
+        ArrayList<Integer> addBlankLinesAfter = new ArrayList<>();
+        for (int i=0; i<tokens.size(); i++){
+            addBlankLinesAfter.add(0);
         }
 
-        int curInd = 0;
-        Token curToken = null, prevToken = null;
-        while (curInd < inputTokens.size()) {
-            curToken = inputTokens.get(curInd);
-            if (prevToken == null) {
-                tokensHandled.add(curToken);
-                curInd++;
-                continue;
+        while (true) {
+            t = tokens.get(ind);
+
+            // todo
+
+            ind++;
+            if (ind == tokens.size()) {
+                break;
             }
-
-            if (curToken.isIncludeDirective()) {
-                if (prevToken.isIncludeDirective()) {
-                    tokensHandled.add(curToken);
-                } else if (prevToken.isComment()) {
-
-                }
-            } else {
-                tokensHandled.add(curToken);
-            }
-
-            curInd++;
         }
 
-        return tokensHandled;
+
+//        ArrayList<Token> tokensHandled = new ArrayList<>();
+//        int nestedLevel = 0;
+//        ArrayList<Boolean> toRemove = new ArrayList<>(), toAddAfterCurrent = new ArrayList<>();
+//        for (int i = 0; i < inputTokens.size(); i++) {
+//            toRemove.add(false);
+//            toAddAfterCurrent.add(false);
+//        }
+//
+//        int curInd = 0;
+//        Token curToken = null, prevToken = null;
+//        while (curInd < inputTokens.size()) {
+//            curToken = inputTokens.get(curInd);
+//            if (prevToken == null) {
+//                tokensHandled.add(curToken);
+//                curInd++;
+//                continue;
+//            }
+//
+//            if (curToken.isIncludeDirective()) {
+//                if (prevToken.isIncludeDirective()) {
+//                    tokensHandled.add(curToken);
+//                } else if (prevToken.isComment()) {
+//
+//                }
+//            } else {
+//                tokensHandled.add(curToken);
+//            }
+//
+//            curInd++;
+//        }
+//
+//        return tokensHandled;
 
         return ans;
+    }
+
+
+    private ArrayList<Token> removeFirstBlankLines(ArrayList<Token> tokens) {
+        ArrayList<Token> sanitized = new ArrayList<>();
+        boolean fromStart = true;
+        for (int i = 0; i < tokens.size(); i++) {
+            Token t = tokens.get(i);
+            if (fromStart) {
+                if (!t.isBlankLine()) {
+                    fromStart = false;
+                    sanitized.add(t);
+                }
+            } else {
+                sanitized.add(t);
+            }
+        }
+
+        return sanitized;
     }
 
     /**
      * Handles the cases from template properties file for input tokens.
      * To be called after comments handling!
      * Should implement:
-     * 1) minimum blank lines handling
-     * 2) maximum blank lines handling (sanitizeMaxBlankLines)!
+     * 1) removers first blank lines (at the beginning of the file)
+     * 2) glues comments wit neighbouring blank lines
+     * 3) minimum blank lines handling
+     * 4) maximum blank lines handling (sanitizeMaxBlankLines)!
      */
     public ArrayList<Token> handleBlankLines() {
+        this.inputTokens = removeFirstBlankLines(this.inputTokens);
         ArrayList<Token> tokensCommmentFixed = getTokensWithHandledComments();
         ArrayList<Token> tokensMinBlankLinesFixed = sanitizeMinimumBlankLines(tokensCommmentFixed);
         ArrayList<Token> tokensMaxBlankLinesFixed = sanitizeMaxBlankLines(tokensMinBlankLinesFixed);
