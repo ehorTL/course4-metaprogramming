@@ -96,8 +96,8 @@ public class BlankLinesHandler {
     }
 
 
-    private Token nexxNotBlankLineToken(ArrayList<Token> tokens, int currentIndex) {
-        for (int i = currentIndex; i < tokens.size(); i++) {
+    private Token nextNotBlankLineToken(ArrayList<Token> tokens, int currentIndex) {
+        for (int i = currentIndex + 1; i < tokens.size(); i++) {
             if (!tokens.get(i).isBlankLine()) {
                 return tokens.get(i);
             }
@@ -107,7 +107,7 @@ public class BlankLinesHandler {
     }
 
     private Token prevNotBlankLineToken(ArrayList<Token> tokens, int currentIndex) {
-        for (int i = currentIndex; i >= 0; i--) {
+        for (int i = currentIndex - 1; i >= 0; i--) {
             if (!tokens.get(i).isBlankLine()) {
                 return tokens.get(i);
             }
@@ -116,65 +116,85 @@ public class BlankLinesHandler {
         return null;
     }
 
-    private ArrayList<Token> sanitizeMinimumBlankLines(ArrayList<Token> tokens) {
-        ArrayList<Token> ans = new ArrayList<>();
-
-        // #include handling
-        int ind = 0;
-        Token t = null;
-        ArrayList<Integer> addBlankLinesAfter = new ArrayList<>();
-        for (int i=0; i<tokens.size(); i++){
-            addBlankLinesAfter.add(0);
-        }
-
-        while (true) {
-            t = tokens.get(ind);
-
-            // todo
-
-            ind++;
-            if (ind == tokens.size()) {
-                break;
+    /**
+     * @param before if true then counting before, otherwise - after
+     */
+    private int countBlankLines(ArrayList<Token> tokens, int currentIndex, boolean before) {
+        int counter = 0;
+        if (before) {
+            for (int i = currentIndex - 1; i >= 0; i--) {
+                if (tokens.get(i).isBlankLine()) {
+                    counter++;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            for (int i = currentIndex + 1; i < tokens.size(); i++) {
+                if (tokens.get(i).isBlankLine()) {
+                    counter++;
+                } else {
+                    break;
+                }
             }
         }
 
+        return counter;
+    }
 
-//        ArrayList<Token> tokensHandled = new ArrayList<>();
-//        int nestedLevel = 0;
-//        ArrayList<Boolean> toRemove = new ArrayList<>(), toAddAfterCurrent = new ArrayList<>();
-//        for (int i = 0; i < inputTokens.size(); i++) {
-//            toRemove.add(false);
-//            toAddAfterCurrent.add(false);
-//        }
-//
-//        int curInd = 0;
-//        Token curToken = null, prevToken = null;
-//        while (curInd < inputTokens.size()) {
-//            curToken = inputTokens.get(curInd);
-//            if (prevToken == null) {
-//                tokensHandled.add(curToken);
-//                curInd++;
-//                continue;
-//            }
-//
-//            if (curToken.isIncludeDirective()) {
-//                if (prevToken.isIncludeDirective()) {
-//                    tokensHandled.add(curToken);
-//                } else if (prevToken.isComment()) {
-//
-//                }
-//            } else {
-//                tokensHandled.add(curToken);
-//            }
-//
-//            curInd++;
-//        }
-//
-//        return tokensHandled;
+    /**
+     * Minimun blank lines before and after includes settings
+     */
+    private ArrayList<Token> applyIncludesSettings(ArrayList<Token> tokens) {
+        ArrayList<Token> ans = new ArrayList<>();
+        ArrayList<Integer> addBLAfter = new ArrayList<>();
+        for (int i = 0; i < tokens.size(); i++) {
+            addBLAfter.add(0);
+        }
+
+        Token curToken = null, prevToken = null, nextToken = null;
+        int blBefore = 0, blAfter = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            curToken = tokens.get(i);
+            if (curToken.isIncludeDirective()) {
+                prevToken = prevNotBlankLineToken(tokens, i);
+                nextToken = nextNotBlankLineToken(tokens, i);
+                blBefore = countBlankLines(tokens, i, true);
+                blAfter = countBlankLines(tokens, i, false);
+                if (templateProperties.minimum_blank_lines_before_includes > blBefore) {
+                    if (i != 0) {
+                        if (prevToken != null && !prevToken.isComment()){
+                            addBLAfter.set(i-1, Math.max(templateProperties.minimum_blank_lines_after_includes - blBefore, addBLAfter.get(i-1)));
+                        }
+                    }
+                }
+                if (templateProperties.minimum_blank_lines_after_includes > blAfter) {
+                    if (i != tokens.size() - 1) {
+                        if (nextToken != null && !nextToken.isComment()){
+                            addBLAfter.set(i, Math.max(templateProperties.minimum_blank_lines_after_includes - blAfter, addBLAfter.get(i)));
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i=0; i<addBLAfter.size(); i++){
+            ans.add(tokens.get(i));
+            int linesToAdd =addBLAfter.get(i);
+            for (int j=0; j<linesToAdd; j++){
+                ans.add(new Token(TokenNameAllowed.BLANK_LINE, "\n"));
+            }
+        }
 
         return ans;
     }
 
+    private ArrayList<Token> sanitizeMinimumBlankLines(ArrayList<Token> tokens) {
+        ArrayList<Token> ans = applyIncludesSettings(tokens);
+        ans = applyIncludesSettings(ans);
+
+        return ans;
+    }
 
     private ArrayList<Token> removeFirstBlankLines(ArrayList<Token> tokens) {
         ArrayList<Token> sanitized = new ArrayList<>();
