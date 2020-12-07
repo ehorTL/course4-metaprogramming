@@ -78,4 +78,7 @@ public class Token {
     public boolean isPunctuator() {
         return this.name.getTokenName() == TokenNameAllowed.PUNCTUATOR;
     }
+    public boolean isIdentifier() {
+        return this.name.getTokenName() == TokenNameAllowed.IDENTIFIER;
+    }
 }

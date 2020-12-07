@@ -8,6 +8,7 @@ import formatter.filewriter.TokenFileWriter;
 import formatter.logger.Logger;
 import formatter.streamconverter.TokensStreamConverter;
 import formatter.streamconverter.utils.BlankLinesHandler;
+import formatter.streamconverter.utils.ClassAndFunctionsHelper;
 import formatter.utils.File;
 import templatereader.TemplateProperties;
 import templatereader.TemplatesReader;
@@ -51,11 +52,25 @@ public class Formatter {
         lexer.parse();
         ArrayList<Token> tokens = lexer.getTokens();
 
-        BlankLinesHandler bh = new BlankLinesHandler(templateProperties, tokens);
-        tokens = bh.getTokensWithHandledComments();
+//        testing
+        ClassAndFunctionsHelper fh  = new ClassAndFunctionsHelper(tokens);
+        fh.markup();
+        for (int i=0; i<tokens.size(); i++){
+            if (fh.tokenAtPosition.get(i) != null){
+                System.out.println(i + " :  " + fh.tokenAtPosition.get(i)[0] + "   " + fh.tokenAtPosition.get(i)[1] + "   "
+                        +fh.tokenAtPosition.get(i)[2] + "   " +fh.tokenAtPosition.get(i)[3] + "   " + tokens.get(i));
+            }
+        }
+//        testing end
+
+//        BlankLinesHandler bh = new BlankLinesHandler(templateProperties, tokens);
+//        tokens = bh.getTokensWithHandledComments();
 
         if (DEBUG){
-            for (Token t : tokens) System.out.println(t.getName().getTokenName() + " --- " + t.getValue().getValue());
+            for (int i=0; i<tokens.size(); i++){
+                Token t = tokens.get(i);
+                System.out.println(i + ". " + t.getName().getTokenName() + " --- " + t.getValue().getValue());
+            }
         }
 
         TokensStreamConverter tokensStreamConverter = new TokensStreamConverter(tokens, templateProperties);
